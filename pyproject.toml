@@ -5,7 +5,7 @@ description = "Network device configuration security auditor (Cisco-first)"
 requires-python = ">=3.10"
 dependencies = [
     "typer>=0.12.0",
-    "pydantic>=2.0.0",
+    "pydantic>=2.0,<3.0",
     "pyyaml>=6.0",
     "pytest>=8.0.0",
     "pytest-xdist>=3.5.0",

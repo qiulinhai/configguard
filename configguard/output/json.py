@@ -1,6 +1,6 @@
 """JSON output generator for ConfigGuard."""
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from configguard.models import Finding
 
 
@@ -34,7 +34,7 @@ def generate_json_report(findings: list[Finding], config_name: str, rules_versio
             "device_type": "Cisco IOS",
             "parser_version": "0.1.0",
             "rules_version": rules_version,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         },
     }
 
