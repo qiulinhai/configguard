@@ -77,3 +77,38 @@ def test_missing_aaa_case(load_test_case):
     aaa_findings = [f for f in findings if f.rule_id == "CISCO-AUTH-001"]
     assert len(aaa_findings) == 1
     assert aaa_findings[0].status.value == "FAIL"
+
+
+def test_rule_evaluate_with_context():
+    """Test Rule can evaluate against a SignalContext."""
+    from configguard.models import Signal
+    from configguard.context import SignalContext
+
+    rule = Rule({
+        "id": "CISCO-SNMP-001",
+        "name": "Disable SNMP v2c",
+        "category": "snmp-security",
+        "severity": "HIGH",
+        "match": {"type": "regex", "pattern": "(public|private)"},
+        "condition": "present",
+        "finding": {"status": "FAIL"},
+    })
+
+    # Create context with multiple SNMP signals
+    signals = [
+        Signal(type="snmp_community", value="public", context="global",
+               block_type="global", raw="snmp-server community public"),
+        Signal(type="snmp_community", value="private", context="global",
+               block_type="global", raw="snmp-server community private"),
+    ]
+    context = SignalContext(
+        rule_id="CISCO-SNMP-001",
+        context_key="snmp_security",
+        signals=signals,
+        aggregated_evidence=["public", "private"],
+        metadata={"community_count": 2},
+    )
+
+    findings = rule.evaluate_with_context(context)
+    assert len(findings) == 1  # ONE finding, not two
+    assert findings[0].evidence == "public, private"  # Aggregated

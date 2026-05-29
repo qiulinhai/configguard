@@ -3,6 +3,7 @@ import re
 import yaml
 from pathlib import Path
 from configguard.models import ConfigIR, Finding, FindingStatus, Severity
+from configguard.context import SignalContext
 
 
 class Rule:
@@ -86,6 +87,46 @@ class Rule:
                 if match.group() in block_text:
                     return block.name
         return None
+
+    def evaluate_with_context(self, context: SignalContext) -> list[Finding]:
+        """Evaluate this rule against a signal context.
+
+        Unlike evaluate() which searches ConfigIR directly, this method
+        evaluates the aggregated signals in a context.
+        """
+        findings = []
+
+        # For "present" condition: check if aggregated evidence matches pattern
+        if self.condition == "present":
+            evidence_text = ", ".join(context.aggregated_evidence)
+            if re.search(self.pattern, evidence_text):
+                findings.append(Finding(
+                    rule_id=self.id,
+                    rule_name=self.name,
+                    category=self.category,
+                    severity=self.severity,
+                    status=self.finding_status,
+                    evidence=evidence_text,  # Aggregated evidence
+                    block_type="global",
+                    block_name=context.context_key,
+                    remediation=self.remediation,
+                ))
+        elif self.condition == "absent":
+            evidence_text = ", ".join(context.aggregated_evidence)
+            if not re.search(self.pattern, evidence_text):
+                findings.append(Finding(
+                    rule_id=self.id,
+                    rule_name=self.name,
+                    category=self.category,
+                    severity=self.severity,
+                    status=self.finding_status,
+                    evidence="",
+                    block_type="global",
+                    block_name=context.context_key,
+                    remediation=self.remediation,
+                ))
+
+        return findings
 
 
 class RuleEngine:
