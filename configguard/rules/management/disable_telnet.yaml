@@ -1,0 +1,21 @@
+id: CISCO-MGMT-001
+name: Disable Telnet
+category: management-plane
+severity: HIGH
+
+match:
+  type: regex
+  pattern: "transport input .*telnet"
+  scope: line.vty
+
+condition: present
+
+finding:
+  status: FAIL
+  evidence: true
+
+description: >
+  Telnet transmits credentials in plaintext.
+
+remediation: >
+  Use 'transport input ssh' instead.
