@@ -4,7 +4,14 @@ from configguard.models import ConfigIR, Block, Signal
 
 class SignalExtractor:
     def extract(self, config_ir: ConfigIR) -> list[Signal]:
-        """Extract signals from parsed ConfigIR with deduplication."""
+        """Extract signals from parsed ConfigIR with deduplication.
+
+        Deduplication strategy:
+        - For block-level signals (VTY, interface): deduplicate by (type, context)
+          to keep one signal per block instance.
+        - For global signals: deduplicate by (type, context, value) to preserve
+          ALL distinct values (e.g., all SNMP communities).
+        """
         signals = []
         seen = set()
 
@@ -20,7 +27,8 @@ class SignalExtractor:
         # Extract global-level signals
         global_sigs = self._extract_global_signals(config_ir)
         for sig in global_sigs:
-            key = (sig.type, sig.context)
+            # Global signals include value in key to preserve all distinct values
+            key = (sig.type, sig.context, sig.value)
             if key not in seen:
                 seen.add(key)
                 signals.append(sig)
