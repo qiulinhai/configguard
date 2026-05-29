@@ -70,6 +70,41 @@ def test_extractor_extracts_interface_signal():
     assert iface_sigs[0].value == "up"
     assert "GigabitEthernet" in iface_sigs[0].context
 
+def test_signal_extraction_integrated():
+    """Verify SignalExtractor can be used alongside existing rule engine."""
+    config = """
+hostname Router1
+!
+line vty 0 4
+ transport input telnet ssh
+ login local
+!
+end
+"""
+    from configguard.parser import CiscoIOSParser
+    from configguard.signals import SignalExtractor
+    from configguard.engine import RuleEngine
+
+    # Parse config
+    parser = CiscoIOSParser(config)
+    ir = parser.parse()
+
+    # Extract signals (new v0.2 path)
+    extractor = SignalExtractor()
+    signals = extractor.extract(ir)
+
+    # Run v0.1 rules (existing path)
+    engine = RuleEngine("configguard/rules")
+    findings = engine.evaluate(ir)
+
+    # Both should work independently
+    assert len(signals) > 0
+    assert len(findings) > 0
+
+    # Check signal types
+    signal_types = {s.type for s in signals}
+    assert "transport_input" in signal_types
+
 def test_extractor_deduplicates_by_type_context():
     """Same (type, context) should only produce one signal."""
     parser = CiscoIOSParser(SAMPLE_CONFIG)
