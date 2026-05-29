@@ -1,0 +1,17 @@
+id: CISCO-AUTH-001
+name: AAA Required
+category: authentication
+severity: HIGH
+
+match:
+  type: regex
+  pattern: "aaa new-model"
+
+condition: present
+
+finding:
+  status: PASS
+  evidence: true
+
+description: >
+  AAA (Authentication, Authorization, Accounting) must be enabled.

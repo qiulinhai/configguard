@@ -1,0 +1,17 @@
+id: CISCO-LOG-001
+name: Remote Syslog Required
+category: logging
+severity: MEDIUM
+
+match:
+  type: regex
+  pattern: "logging host"
+
+condition: present
+
+finding:
+  status: PASS
+  evidence: true
+
+description: >
+  Remote syslog must be configured for audit trail.

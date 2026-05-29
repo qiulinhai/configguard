@@ -1,0 +1,20 @@
+id: CISCO-MGMT-002
+name: Disable HTTP Server
+category: management-plane
+severity: HIGH
+
+match:
+  type: regex
+  pattern: "ip http server"
+
+condition: present
+
+finding:
+  status: FAIL
+  evidence: true
+
+description: >
+  HTTP server exposes management interface to network attacks.
+
+remediation: >
+  Use 'no ip http server' to disable and use SSH for management.

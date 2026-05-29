@@ -1,0 +1,17 @@
+id: CISCO-LOG-002
+name: NTP Configuration Required
+category: logging
+severity: MEDIUM
+
+match:
+  type: regex
+  pattern: "ntp server"
+
+condition: present
+
+finding:
+  status: PASS
+  evidence: true
+
+description: >
+  NTP must be configured for time synchronization.

@@ -1,0 +1,20 @@
+id: CISCO-MGMT-003
+name: Secure VTY Configuration
+category: management-plane
+severity: HIGH
+
+match:
+  type: regex
+  pattern: "transport input telnet"
+
+condition: absent
+
+finding:
+  status: FAIL
+  evidence: true
+
+description: >
+  VTY lines must not allow telnet access.
+
+remediation: >
+  Configure 'transport input ssh' on all VTY lines.

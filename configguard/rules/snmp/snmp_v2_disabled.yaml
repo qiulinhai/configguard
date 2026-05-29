@@ -1,0 +1,20 @@
+id: CISCO-SNMP-001
+name: Disable SNMP v2c
+category: snmp-security
+severity: HIGH
+
+match:
+  type: regex
+  pattern: "snmp-server community.*(public|private)"
+
+condition: present
+
+finding:
+  status: FAIL
+  evidence: true
+
+description: >
+  SNMP v2c with public/private community strings exposes device to read/write attacks.
+
+remediation: >
+  Use SNMPv3 with authpriv. If SNMP v2c required, use strong community strings.

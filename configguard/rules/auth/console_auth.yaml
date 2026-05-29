@@ -1,0 +1,20 @@
+id: CISCO-AUTH-002
+name: Console Authentication Required
+category: authentication
+severity: HIGH
+
+match:
+  type: regex
+  pattern: "line con 0"
+
+condition: present
+
+finding:
+  status: FAIL
+  evidence: true
+
+description: >
+  Console line must have authentication configured.
+
+remediation: >
+  Configure 'login authentication' under line con 0.

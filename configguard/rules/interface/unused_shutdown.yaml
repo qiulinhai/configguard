@@ -1,0 +1,20 @@
+id: CISCO-IF-001
+name: Unused Interfaces Must Be Shutdown
+category: interface-hygiene
+severity: MEDIUM
+
+match:
+  type: regex
+  pattern: "interface.*GigabitEthernet"
+
+condition: present
+
+finding:
+  status: WARN
+  evidence: true
+
+description: >
+  Unused interfaces should be shutdown to reduce attack surface.
+
+remediation: >
+  Configure 'shutdown' on unused interfaces.
