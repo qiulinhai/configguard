@@ -132,6 +132,8 @@ Example:
 
 ### 4.1 Extractor Interface
 
+**Contract:** `ConfigIR` schema is frozen at v0.1. Signal Extractor reads from stable IR, never modifies it.
+
 ```python
 class SignalExtractor:
     def extract(self, config_ir: ConfigIR) -> list[Signal]:
@@ -190,6 +192,10 @@ SIGNAL_EXTRACTORS = {
 
 ### 5.2 Deduplication in Findings
 
+**Key:** `(f.rule_id, f.block_name, f.evidence)` — uses block_name for stable context, not evidence alone.
+
+Evidence is not a stable dedup key because variations like `transport input telnet` and `transport input telnet ssh` are semantically the same issue but produce different evidence strings.
+
 ```python
 def merge_findings(v1_findings: list[Finding], v2_findings: list[Finding]) -> list[Finding]:
     seen = set()
@@ -197,7 +203,7 @@ def merge_findings(v1_findings: list[Finding], v2_findings: list[Finding]) -> li
 
     for findings in [v1_findings, v2_findings]:
         for f in findings:
-            key = (f.rule_id, f.evidence)
+            key = (f.rule_id, f.block_name, f.evidence)
             if key not in seen:
                 seen.add(key)
                 merged.append(f)
@@ -252,7 +258,7 @@ snmp.security.version     →  v0.2: snmp_version
 logging.syslog.config     →  v0.2: syslog_host
 ```
 
-This separation ensures v0.2 focuses on signal correctness, not taxonomy design.
+**Note:** This mapping is informational only. v0.2 does not implement hierarchical taxonomy — it is documented here to clarify the evolution path.
 
 ---
 
