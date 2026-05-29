@@ -18,7 +18,7 @@ def test_rule_engine_loads_rules():
 def test_rule_engine_detects_telnet():
     engine = RuleEngine("configguard/rules")
     findings = engine.evaluate(SAMPLE_IR)
-    telnet_findings = [f for f in findings if "telnet" in f.rule_id.lower()]
+    telnet_findings = [f for f in findings if f.rule_id == "CISCO-MGMT-001"]
     assert len(telnet_findings) == 1
     assert telnet_findings[0].status == FindingStatus.FAIL
 
