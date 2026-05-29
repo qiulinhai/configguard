@@ -1,0 +1,9 @@
+{
+  "case_id": "case_001_telnet_enabled",
+  "findings": [
+    {
+      "rule_id": "CISCO-MGMT-001",
+      "status": "FAIL"
+    }
+  ]
+}

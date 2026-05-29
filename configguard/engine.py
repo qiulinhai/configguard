@@ -38,6 +38,21 @@ class Rule:
                         block_name=self._get_block_name_for_match(match, ir),
                         remediation=self.remediation,
                     ))
+        elif self.condition == "absent":
+            matches = list(re.finditer(self.pattern, text_to_search))
+            if not matches:
+                status = FindingStatus.FAIL if self.finding_status == FindingStatus.PASS else FindingStatus.PASS
+                findings.append(Finding(
+                    rule_id=self.id,
+                    rule_name=self.name,
+                    category=self.category,
+                    severity=self.severity,
+                    status=status,
+                    evidence="",
+                    block_type=None,
+                    block_name=None,
+                    remediation=self.remediation,
+                ))
 
         return findings
 

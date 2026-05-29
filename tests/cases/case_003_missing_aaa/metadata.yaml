@@ -1,0 +1,7 @@
+id: case_003_missing_aaa
+description: Missing AAA model should trigger FAIL
+tags:
+  - authentication
+  - cisco-ios
+  - high-risk
+version: "1.0"

@@ -1,0 +1,7 @@
+id: case_001_telnet_enabled
+description: Telnet enabled on VTY lines should trigger FAIL
+tags:
+  - management-plane
+  - cisco-ios
+  - high-risk
+version: "1.0"

@@ -5,9 +5,9 @@ severity: HIGH
 
 match:
   type: regex
-  pattern: "aaa new-model"
+  pattern: "^(?!no )aaa new-model"
 
-condition: present
+condition: absent
 
 finding:
   status: PASS

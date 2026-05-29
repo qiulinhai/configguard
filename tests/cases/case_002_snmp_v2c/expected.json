@@ -1,0 +1,9 @@
+{
+  "case_id": "case_002_snmp_v2c",
+  "findings": [
+    {
+      "rule_id": "CISCO-SNMP-001",
+      "status": "FAIL"
+    }
+  ]
+}

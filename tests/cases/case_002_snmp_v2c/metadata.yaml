@@ -1,0 +1,7 @@
+id: case_002_snmp_v2c
+description: SNMP v2c with public community string should trigger FAIL
+tags:
+  - snmp-security
+  - cisco-ios
+  - high-risk
+version: "1.0"

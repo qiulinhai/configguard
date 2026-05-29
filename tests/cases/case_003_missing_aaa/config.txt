@@ -1,0 +1,5 @@
+hostname Router1
+!
+no aaa new-model
+!
+end

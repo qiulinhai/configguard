@@ -1,0 +1,9 @@
+{
+  "case_id": "case_003_missing_aaa",
+  "findings": [
+    {
+      "rule_id": "CISCO-AUTH-001",
+      "status": "FAIL"
+    }
+  ]
+}
