@@ -53,3 +53,18 @@ class AuditReport(BaseModel):
     summary: dict
     findings: list[Finding]
     metadata: dict
+
+
+from dataclasses import dataclass
+
+@dataclass
+class Signal:
+    type: str           # e.g., "transport_input"
+    value: str          # e.g., "telnet"
+    context: str        # e.g., "vty 0 4"
+    block_type: str     # e.g., "line"
+    raw: str            # original config line
+    severity_hint: str | None = None  # optional: "high", "medium", "low"
+
+    def __hash__(self):
+        return hash((self.type, self.context))
