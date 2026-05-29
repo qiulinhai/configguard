@@ -104,7 +104,13 @@ class RuleEngine:
 
     def evaluate(self, ir: ConfigIR) -> list[Finding]:
         all_findings = []
+        seen_evidence = set()  # Deduplication by evidence content
         for rule in self.rules:
             findings = rule.evaluate(ir)
-            all_findings.extend(findings)
+            for finding in findings:
+                # Deduplicate: skip if same rule_id + evidence combination already seen
+                dedup_key = (finding.rule_id, finding.evidence)
+                if dedup_key not in seen_evidence:
+                    seen_evidence.add(dedup_key)
+                    all_findings.append(finding)
         return all_findings
