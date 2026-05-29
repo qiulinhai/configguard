@@ -1,0 +1,2 @@
+[console_scripts]
+configguard = configguard.cli:main

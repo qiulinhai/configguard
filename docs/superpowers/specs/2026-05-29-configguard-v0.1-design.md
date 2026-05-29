@@ -105,6 +105,44 @@ User Input (CLI)
 4. `!` separator marks block boundaries
 5. Preserve both raw lines and structured blocks for rule engine flexibility
 
+### 4.5 Normalized Config Model (IR Layer)
+
+To support future multi-vendor expansion, the parser produces a normalized **Intermediate Representation (IR)** layer that maps vendor-specific config to an abstract security model.
+
+```json
+{
+  "normalized": {
+    "services": {
+      "telnet": { "status": "enabled", "scope": "global" },
+      "ssh": { "status": "enabled", "version": 2, "scope": "vty" }
+    },
+    "management": {
+      "vty": {
+        "transport_input": ["telnet", "ssh"],
+        "auth": "local"
+      }
+    },
+    "logging": {
+      "remote_syslog": { "status": "disabled" },
+      "ntp": { "status": "disabled" }
+    },
+    "snmp": {
+      "version": "v2c",
+      "community": "public"
+    }
+  }
+}
+```
+
+**Why this layer matters:**
+- Abstracts vendor-specific syntax → abstract security concepts
+- Enables rule engine to write vendor-agnostic rules
+- Supports future expansion to NX-OS, Juniper, Cloud configs
+- Rule engine operates on normalized model, not raw config text
+
+**Design principle:**
+> Parser produces IR, not raw text. Rule engine evaluates IR, not config lines.
+
 ---
 
 ## 5. Rule Engine Design
@@ -272,10 +310,12 @@ Enriched explanations + remediation suggestions
 
 > **"AI must never affect determinism."**
 
+**Hard constraints (enforced by architecture):**
 - LLM is invoked only after rule engine produces findings
 - LLM input includes rule metadata + evidence, not raw config
 - LLM output is cached to avoid repeated API calls
 - In v0.1, LLM explanation is disabled by default (flag: `--explain`)
+- **LLM output is never persisted as authoritative data** — it exists only for presentation, never influences subsequent rule evaluations or data flows
 
 ---
 
@@ -454,9 +494,11 @@ configguard audit router_config.txt --format json
 1. **Deterministic over smart** — Rule engine must produce consistent, reproducible results
 2. **Rule = Data, not Code** — Rules are declarative, externalized, versioned
 3. **JSON as source of truth** — All outputs derive from JSON model
-4. **AI explains, never decides** — LLM is an explanation layer only
+4. **AI explains, never decides** — LLM is an explanation layer only, never persisted as authoritative data
 5. **Test everything** — Ground truth system with 100%+ rule coverage
 6. **Start narrow, expand deliberately** — Cisco IOS only in v0.1
+7. **Parser produces IR** — Normalized intermediate representation, not raw text
+8. **Compiler architecture** — Frontend (parser) → IR → Backend (rule engine) → Output
 
 ---
 
@@ -471,7 +513,37 @@ configguard audit router_config.txt --format json
 
 ---
 
-## 14. Rejected Designs
+## 14. Core Understanding
+
+**ConfigGuard v0.1 is a deterministic security rule compiler for network configurations.**
+
+```
+Cisco config (source)
+    ↓
+Parser (frontend / IR producer)
+    ↓
+Rule engine (semantic analyzer / compiler)
+    ↓
+Findings IR (intermediate representation)
+    ↓
+Output layer (JSON / Markdown / STDOUT)
+```
+
+This is compiler architecture:
+- **Frontend:** Block-aware parser produces normalized IR
+- **IR:** Abstract security model (vendor-agnostic)
+- **Backend:** Rule engine evaluates IR against declarative rules
+- **Output:** Multiple backends derive from same IR
+
+This design gives us:
+- Testability (deterministic, reproducible)
+- Extensibility (add vendors via new parsers, not new rules)
+- AI readiness (IR is clean input for LLM)
+- Enterprise readiness (JSON IR is API-compatible)
+
+---
+
+## 15. Rejected Designs
 
 | Approach | Why Rejected |
 |----------|--------------|

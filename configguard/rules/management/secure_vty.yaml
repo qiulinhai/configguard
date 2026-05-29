@@ -7,7 +7,7 @@ match:
   type: regex
   pattern: "transport input telnet"
 
-condition: absent
+condition: present
 
 finding:
   status: FAIL

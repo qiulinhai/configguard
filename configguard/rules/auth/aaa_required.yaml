@@ -5,12 +5,12 @@ severity: HIGH
 
 match:
   type: regex
-  pattern: "^(?!no )aaa new-model"
+  pattern: "no aaa new-model"
 
-condition: absent
+condition: present
 
 finding:
-  status: PASS
+  status: FAIL
   evidence: true
 
 description: >

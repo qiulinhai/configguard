@@ -41,18 +41,19 @@ class Rule:
         elif self.condition == "absent":
             matches = list(re.finditer(self.pattern, text_to_search))
             if not matches:
-                status = FindingStatus.FAIL if self.finding_status == FindingStatus.PASS else FindingStatus.PASS
+                # Pattern not found = item is absent as required, report finding.status directly
                 findings.append(Finding(
                     rule_id=self.id,
                     rule_name=self.name,
                     category=self.category,
                     severity=self.severity,
-                    status=status,
+                    status=self.finding_status,
                     evidence="",
                     block_type=None,
                     block_name=None,
                     remediation=self.remediation,
                 ))
+        # If matches found for absent condition, item exists (good), don't add finding
 
         return findings
 

@@ -1,0 +1,10 @@
+Metadata-Version: 2.4
+Name: configguard
+Version: 0.1.0
+Summary: Network device configuration security auditor (Cisco-first)
+Requires-Python: >=3.10
+Requires-Dist: typer>=0.12.0
+Requires-Dist: pydantic>=2.0.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: pytest>=8.0.0
+Requires-Dist: pytest-xdist>=3.5.0
