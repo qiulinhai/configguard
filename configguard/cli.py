@@ -1,4 +1,5 @@
 """ConfigGuard CLI entry point."""
+import sys
 import typer
 from pathlib import Path
 from datetime import datetime
@@ -73,7 +74,10 @@ def audit(
 
 
 def main():
-    app()
+    args = sys.argv[1:]
+    if args and args[0] == "audit":
+        args = args[1:]
+    app(args)
 
 
 if __name__ == "__main__":
