@@ -142,11 +142,10 @@ def test_rule_evaluate_with_context():
                block_type="global", raw="snmp-server community private"),
     ]
     context = SignalContext(
-        rule_id="CISCO-SNMP-001",
         context_key="snmp_security",
         signals=signals,
         aggregated_evidence=["public", "private"],
-        metadata={"community_count": 2},
+        metadata={"rule_id": "CISCO-SNMP-001", "community_count": 2},
     )
 
     findings = rule.evaluate_with_context(context)

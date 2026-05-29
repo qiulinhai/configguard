@@ -1,4 +1,5 @@
 """ConfigGuard CLI entry point."""
+import json
 import sys
 import typer
 from pathlib import Path
@@ -22,6 +23,7 @@ def audit(
     explain: bool = typer.Option(False, help="Enable LLM explanations"),
     verbose: bool = typer.Option(False, help="Verbose output"),
     use_context: bool = typer.Option(True, help="Use context-based evaluation (per-context, aggregated evidence)"),
+    debug_contexts: bool = typer.Option(False, help="Output SignalContext JSON for debugging (before evaluation)"),
 ):
     """Audit a network device configuration file."""
     if not config_file.exists():
@@ -41,6 +43,15 @@ def audit(
 
         builder = ContextBuilder()
         contexts = builder.build_contexts(signals, engine.rules)
+
+        if debug_contexts:
+            contexts_json = {
+                "contexts": [ctx.to_dict() for ctx in contexts],
+                "count": len(contexts),
+            }
+            typer.echo("\n--- DEBUG: SignalContexts ---")
+            typer.echo(json.dumps(contexts_json, indent=2, default=str))
+            typer.echo("--- END DEBUG ---\n")
 
         findings = engine.evaluate_with_contexts(contexts)
     else:

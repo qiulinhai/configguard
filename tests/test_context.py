@@ -50,7 +50,7 @@ class TestContextBuilder:
 
         assert len(contexts) == 1
         ctx = contexts[0]
-        assert ctx.rule_id == "CISCO-SNMP-001"
+        assert ctx.metadata["rule_id"] == "CISCO-SNMP-001"
         assert ctx.context_key == "snmp_security"
         assert len(ctx.signals) == 1
         assert "public" in ctx.aggregated_evidence

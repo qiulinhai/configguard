@@ -1,5 +1,7 @@
 """Context Builder for semantic signal grouping."""
-from dataclasses import dataclass, field
+import uuid
+from dataclasses import dataclass, field, asdict
+from typing import Any
 from configguard.models import Signal
 
 
@@ -26,12 +28,42 @@ SIGNAL_CONTEXT_CLUSTERS = {
 
 @dataclass
 class SignalContext:
-    """A semantic grouping of signals relevant to a single rule evaluation."""
-    rule_id: str
+    """A semantic grouping of signals relevant to a single rule evaluation.
+
+    This is the core semantic unit of ConfigGuard's reasoning layer.
+    All rule evaluations operate on contexts, not individual signals.
+
+    Schema (frozen v0.2.1):
+        id: str - Unique identifier (auto-generated UUID)
+        context_key: str - Semantic type (e.g., "snmp_security", "vty_0_4")
+        signals: list[Signal] - Original signals (preserves audit trail)
+        aggregated_evidence: list[str] - Evidence values for pattern matching
+        metadata: dict - Extensible metadata
+    """
     context_key: str
     signals: list[Signal] = field(default_factory=list)
     aggregated_evidence: list[str] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
+    id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize context to dictionary for JSON output."""
+        return {
+            "id": self.id,
+            "context_key": self.context_key,
+            "signals": [
+                {
+                    "type": s.type,
+                    "value": s.value,
+                    "context": s.context,
+                    "block_type": s.block_type,
+                    "raw": s.raw,
+                }
+                for s in self.signals
+            ],
+            "evidence": self.aggregated_evidence,
+            "metadata": self.metadata,
+        }
 
 
 class ContextBuilder:
@@ -137,6 +169,7 @@ class ContextBuilder:
         metadata = {
             "signal_count": len(signals),
             "signal_types": list({s.type for s in signals}),
+            "rule_id": rule_id,  # Track which rule this context is for
         }
 
         # Add specific metadata based on context type
@@ -158,7 +191,6 @@ class ContextBuilder:
                 metadata["description"] = descriptions[0]
 
         return SignalContext(
-            rule_id=rule_id,
             context_key=cluster_key,
             signals=signals,
             aggregated_evidence=evidence_values,

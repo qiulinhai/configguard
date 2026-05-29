@@ -168,8 +168,13 @@ class RuleEngine:
         seen_findings = set()
 
         for context in contexts:
-            # Find rules relevant to this context
-            relevant_rules = [r for r in self.rules if r.id == context.rule_id]
+            # Get rule_id from metadata (stored during context building)
+            rule_id = context.metadata.get("rule_id")
+            if not rule_id:
+                continue
+
+            # Find rule by id
+            relevant_rules = [r for r in self.rules if r.id == rule_id]
             if not relevant_rules:
                 continue
 
