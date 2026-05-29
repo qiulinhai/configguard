@@ -5,7 +5,7 @@ severity: HIGH
 
 match:
   type: regex
-  pattern: "snmp-server community.*(public|private)"
+  pattern: "(public|private)"
 
 condition: present
 

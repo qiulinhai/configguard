@@ -155,3 +155,29 @@ class RuleEngine:
                     seen_findings.add(dedup_key)
                     all_findings.append(finding)
         return all_findings
+
+    def evaluate_with_contexts(self, contexts: list[SignalContext]) -> list[Finding]:
+        """Evaluate rules against pre-built signal contexts.
+
+        This method evaluates rules using semantic contexts (from ContextBuilder)
+        instead of per-signal ConfigIR search. Results in one finding per
+        semantic issue, not one finding per signal.
+        """
+        all_findings = []
+        seen_findings = set()
+
+        for context in contexts:
+            # Find rules relevant to this context
+            relevant_rules = [r for r in self.rules if r.id == context.rule_id]
+            if not relevant_rules:
+                continue
+
+            for rule in relevant_rules:
+                findings = rule.evaluate_with_context(context)
+                for finding in findings:
+                    dedup_key = (finding.rule_id, finding.block_name, finding.evidence)
+                    if dedup_key not in seen_findings:
+                        seen_findings.add(dedup_key)
+                        all_findings.append(finding)
+
+        return all_findings

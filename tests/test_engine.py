@@ -79,6 +79,46 @@ def test_missing_aaa_case(load_test_case):
     assert aaa_findings[0].status.value == "FAIL"
 
 
+def test_engine_evaluate_with_contexts():
+    """Test RuleEngine can evaluate using ContextBuilder."""
+    from configguard.parser import CiscoIOSParser
+    from configguard.signals import SignalExtractor
+    from configguard.context import ContextBuilder
+
+    config_text = """
+    hostname Router1
+    !
+    snmp-server community public RO
+    snmp-server community private RW
+    !
+    end
+    """
+
+    parser = CiscoIOSParser(config_text)
+    ir = parser.parse()
+
+    # Extract signals
+    extractor = SignalExtractor()
+    signals = extractor.extract(ir)
+
+    # Build contexts
+    builder = ContextBuilder()
+    engine = RuleEngine("configguard/rules")
+    contexts = builder.build_contexts(signals, engine.rules)
+
+    # Evaluate using contexts
+    findings = engine.evaluate_with_contexts(contexts)
+
+    # Count SNMP findings
+    snmp_findings = [f for f in findings if f.rule_id == "CISCO-SNMP-001"]
+    assert len(snmp_findings) == 1  # ONE finding, not two
+
+    # Verify aggregated evidence
+    snmp_finding = snmp_findings[0]
+    assert "public" in snmp_finding.evidence
+    assert "private" in snmp_finding.evidence
+
+
 def test_rule_evaluate_with_context():
     """Test Rule can evaluate against a SignalContext."""
     from configguard.models import Signal
