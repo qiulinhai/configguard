@@ -17,3 +17,15 @@ def test_cli_basic_audit(tmp_path):
     result = runner.invoke(app, [str(config_file)])
     assert result.exit_code == 0
     assert "FAIL" in result.output or "telnet" in result.output.lower()
+
+def test_cli_with_signal_extraction(tmp_path):
+    """Test CLI works when signal extraction is available."""
+    runner = CliRunner()
+    config_file = tmp_path / "config.txt"
+    config_file.write_text("line vty 0 4\n transport input telnet ssh\n")
+
+    result = runner.invoke(app, [str(config_file)])
+    assert result.exit_code == 0
+    assert "FAIL" in result.output or "PASS" in result.output
+    # Verify signal extraction info not leaked to user (internal)
+    assert "Signal" not in result.output
