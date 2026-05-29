@@ -4,6 +4,8 @@ import typer
 from pathlib import Path
 from datetime import datetime
 from configguard.parser import CiscoIOSParser
+from configguard.signals import SignalExtractor
+from configguard.context import ContextBuilder
 from configguard.engine import RuleEngine
 from configguard.output.json import generate_json_report
 from configguard.output.markdown import generate_markdown_report
@@ -19,6 +21,7 @@ def audit(
     rules_dir: Path = typer.Option(Path("configguard/rules"), help="Rules directory"),
     explain: bool = typer.Option(False, help="Enable LLM explanations"),
     verbose: bool = typer.Option(False, help="Verbose output"),
+    use_context: bool = typer.Option(True, help="Use context-based evaluation (per-context, aggregated evidence)"),
 ):
     """Audit a network device configuration file."""
     if not config_file.exists():
@@ -30,7 +33,19 @@ def audit(
     ir = parser.parse()
 
     engine = RuleEngine(str(rules_dir))
-    findings = engine.evaluate(ir)
+
+    # Context-based evaluation: signals -> contexts -> per-context evaluation
+    if use_context:
+        extractor = SignalExtractor()
+        signals = extractor.extract(ir)
+
+        builder = ContextBuilder()
+        contexts = builder.build_contexts(signals, engine.rules)
+
+        findings = engine.evaluate_with_contexts(contexts)
+    else:
+        # Legacy per-signal evaluation
+        findings = engine.evaluate(ir)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     config_name = config_file.stem  # filename without extension

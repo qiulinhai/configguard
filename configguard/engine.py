@@ -92,13 +92,15 @@ class Rule:
         """Evaluate this rule against a signal context.
 
         Unlike evaluate() which searches ConfigIR directly, this method
-        evaluates the aggregated signals in a context.
+        evaluates the aggregated signals in a context using raw command text.
         """
         findings = []
 
+        # Aggregate raw command text for pattern matching
+        evidence_text = ", ".join(s.raw for s in context.signals)
+
         # For "present" condition: check if aggregated evidence matches pattern
         if self.condition == "present":
-            evidence_text = ", ".join(context.aggregated_evidence)
             if re.search(self.pattern, evidence_text):
                 findings.append(Finding(
                     rule_id=self.id,
@@ -106,13 +108,12 @@ class Rule:
                     category=self.category,
                     severity=self.severity,
                     status=self.finding_status,
-                    evidence=evidence_text,  # Aggregated evidence
+                    evidence=evidence_text,  # Aggregated raw evidence
                     block_type="global",
                     block_name=context.context_key,
                     remediation=self.remediation,
                 ))
         elif self.condition == "absent":
-            evidence_text = ", ".join(context.aggregated_evidence)
             if not re.search(self.pattern, evidence_text):
                 findings.append(Finding(
                     rule_id=self.id,

@@ -122,9 +122,9 @@ class ContextBuilder:
             if "global_time" in clusters:
                 relevant["global_time"] = clusters["global_time"]
         else:
-            # For rules that don't match specific categories, include all clusters
-            # This is a fallback that preserves existing behavior
-            relevant = dict(clusters)
+            # For rules that don't match specific categories, don't include any clusters
+            # This prevents false positive context assignment
+            pass
 
         return relevant
 

@@ -151,4 +151,4 @@ def test_rule_evaluate_with_context():
 
     findings = rule.evaluate_with_context(context)
     assert len(findings) == 1  # ONE finding, not two
-    assert findings[0].evidence == "public, private"  # Aggregated
+    assert findings[0].evidence == "snmp-server community public, snmp-server community private"  # Aggregated raw
