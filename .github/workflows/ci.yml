@@ -21,6 +21,30 @@ jobs:
         run: |
           pip install -e .
 
+      - name: Verify signal extraction
+        run: |
+          python3 -c "
+          from configguard.parser import CiscoIOSParser
+          from configguard.signals import SignalExtractor
+          config = '''hostname Router1
+!
+line vty 0 4
+ transport input telnet ssh
+ login local
+!
+interface GigabitEthernet0/0
+ no shutdown
+!
+end
+'''
+          ir = CiscoIOSParser(config).parse()
+          sigs = SignalExtractor().extract(ir)
+          assert len(sigs) > 0, 'No signals extracted'
+          types = {s.type for s in sigs}
+          assert 'transport_input' in types, f'Missing transport_input signal, got: {types}'
+          print(f'Signal extraction verified: {len(sigs)} signals, types: {types}')
+          "
+
       - name: Run tests
         run: pytest tests/ -v
 
