@@ -1,0 +1,10 @@
+hostname Router1
+!
+line vty 0 4
+ transport input telnet ssh
+ login local
+!
+interface GigabitEthernet0/0
+ no shutdown
+!
+end

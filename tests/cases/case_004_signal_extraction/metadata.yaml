@@ -1,0 +1,6 @@
+id: case_004_signal_extraction
+description: Signal extraction from mixed config
+tags:
+  - signal-layer
+  - cisco-ios
+version: "1.0"

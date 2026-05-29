@@ -118,3 +118,23 @@ def test_extractor_deduplicates_by_type_context():
         key = (sig.type, sig.context)
         assert key not in seen_keys, f"Duplicate signal: {key}"
         seen_keys.add(key)
+
+def test_signal_extraction_case():
+    """Test signal extraction from case_004."""
+    from pathlib import Path
+    import json
+
+    case_dir = Path(__file__).parent / "cases" / "case_004_signal_extraction"
+    config_text = (case_dir / "config.txt").read_text()
+    expected = json.loads((case_dir / "expected_signals.json").read_text())
+
+    parser = CiscoIOSParser(config_text)
+    ir = parser.parse()
+    extractor = SignalExtractor()
+    signals = extractor.extract(ir)
+
+    expected_types = {(s["type"], s["value"], s["context"]) for s in expected["signals"]}
+    actual_types = {(s.type, s.value, s.context) for s in signals}
+
+    for exp in expected_types:
+        assert exp in actual_types, f"Missing signal: {exp}"

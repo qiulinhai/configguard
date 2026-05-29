@@ -1,0 +1,25 @@
+{
+  "case_id": "case_004_signal_extraction",
+  "signals": [
+    {
+      "type": "transport_input",
+      "value": "telnet",
+      "context": "vty 0 4"
+    },
+    {
+      "type": "auth_method",
+      "value": "local",
+      "context": "vty 0 4"
+    },
+    {
+      "type": "interface_state",
+      "value": "up",
+      "context": "GigabitEthernet0/0"
+    },
+    {
+      "type": "interface_description",
+      "value": "missing",
+      "context": "GigabitEthernet0/0"
+    }
+  ]
+}
