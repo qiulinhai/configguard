@@ -1,4 +1,5 @@
 """Signal extraction from ConfigIR."""
+import re
 from configguard.models import ConfigIR, Block, Signal
 
 
@@ -140,8 +141,12 @@ class SignalExtractor:
                 raw="no ip http server",
             ))
 
-        # SNMP
-        if "snmp-server community public" in raw_text or "snmp-server community private" in raw_text:
+        # SNMP - extract version and all community strings
+        # Check for any snmp-server community lines to determine version signal
+        community_pattern = re.compile(r'snmp-server\s+community\s+(\S+)', re.MULTILINE)
+        communities = community_pattern.findall(raw_text)
+
+        if communities:
             signals.append(Signal(
                 type="snmp_version",
                 value="v2c",
@@ -149,21 +154,13 @@ class SignalExtractor:
                 block_type="global",
                 raw="snmp-server community",
             ))
-            if "snmp-server community public" in raw_text:
+            for community in communities:
                 signals.append(Signal(
                     type="snmp_community",
-                    value="public",
+                    value=community,
                     context="global",
                     block_type="global",
-                    raw="snmp-server community public",
-                ))
-            if "snmp-server community private" in raw_text:
-                signals.append(Signal(
-                    type="snmp_community",
-                    value="private",
-                    context="global",
-                    block_type="global",
-                    raw="snmp-server community private",
+                    raw=f"snmp-server community {community}",
                 ))
 
         # Syslog

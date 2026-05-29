@@ -1,0 +1,10 @@
+{
+  "case_id": "case_005_context_aggregation",
+  "findings": [
+    {
+      "rule_id": "CISCO-SNMP-001",
+      "status": "FAIL",
+      "evidence_contains": ["public", "private", "community123"]
+    }
+  ]
+}

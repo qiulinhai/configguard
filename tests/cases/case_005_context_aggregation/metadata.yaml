@@ -1,0 +1,7 @@
+id: case_005_context_aggregation
+description: Context aggregation produces single SNMP finding with all communities
+tags:
+  - context-builder
+  - semantic-aggregation
+  - snmp
+version: "1.0"

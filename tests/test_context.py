@@ -234,3 +234,54 @@ class TestAggregatedEvidence:
         assert set(ctx.aggregated_evidence) == {"telnet", "ssh", "local"}
         assert "telnet" in ctx.metadata.get("transport", [])
         assert "ssh" in ctx.metadata.get("transport", [])
+
+
+class TestIntegrationSnmpSingleFinding:
+    """Integration test for SNMP single finding with context aggregation."""
+
+    def test_snmp_single_finding_with_all_communities(self):
+        """SNMP rule produces ONE finding with all community strings."""
+        from configguard.parser import CiscoIOSParser
+        from configguard.signals import SignalExtractor
+        from configguard.context import ContextBuilder
+        from configguard.engine import RuleEngine
+
+        config_text = """
+        hostname Router1
+        !
+        snmp-server community public RO
+        snmp-server community private RW
+        snmp-server community community123
+        !
+        end
+        """
+
+        parser = CiscoIOSParser(config_text)
+        ir = parser.parse()
+
+        extractor = SignalExtractor()
+        signals = extractor.extract(ir)
+
+        # Verify all 3 signals extracted (3 communities + 1 version)
+        snmp_communities = [s for s in signals if s.type == "snmp_community"]
+        assert len(snmp_communities) == 3
+
+        builder = ContextBuilder()
+        engine = RuleEngine("configguard/rules")
+
+        # Build contexts for SNMP rules
+        snmp_rules = [r for r in engine.rules if "snmp" in r.id.lower()]
+        contexts = builder.build_contexts(signals, snmp_rules)
+
+        # Evaluate with contexts
+        findings = engine.evaluate_with_contexts(contexts)
+
+        # ONE finding for CISCO-SNMP-001
+        snmp_findings = [f for f in findings if f.rule_id == "CISCO-SNMP-001"]
+        assert len(snmp_findings) == 1
+
+        # Evidence contains all three communities
+        evidence = snmp_findings[0].evidence
+        assert "public" in evidence
+        assert "private" in evidence
+        assert "community123" in evidence
