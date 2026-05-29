@@ -31,7 +31,7 @@ def audit(
     findings = engine.evaluate(ir)
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    config_name = config_file.name
+    config_name = config_file.stem  # filename without extension
 
     if format in ("json", "all"):
         json_report = generate_json_report(
@@ -49,13 +49,20 @@ def audit(
         md_path.write_text(md_report)
         typer.echo(f"Markdown report: {md_path}")
 
-    # STDOUT summary
+    # STDOUT summary - derived from findings list, not re-counted
     typer.echo("\n--- Audit Summary ---")
     for f in findings:
         status_icon = "FAIL" if f.status.value == "FAIL" else "PASS"
-        typer.echo(f"[{status_icon}] {f.rule_name}")
+        typer.echo(f"[{status_icon}] {f.rule_id} {f.rule_name}")
+        if f.block_name:
+            typer.echo(f"       Block: {f.block_name}")
+        typer.echo(f"       Evidence: {f.evidence}")
 
-    typer.echo(f"\nTotal: {len(findings)} findings")
+    total = len(findings)
+    fail = sum(1 for f in findings if f.status.value == "FAIL")
+    warn = sum(1 for f in findings if f.status.value == "WARN")
+    pass_count = sum(1 for f in findings if f.status.value == "PASS")
+    typer.echo(f"\nTotal: {total} findings ({fail} failed, {warn} warnings, {pass_count} passed)")
 
 
 def main():
