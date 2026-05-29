@@ -87,7 +87,7 @@ class SignalExtractor:
             value="present" if has_description else "missing",
             context=context,
             block_type="interface",
-            raw=block.commands[0] if block.commands else "",
+            raw=next((cmd for cmd in block.commands if cmd.startswith("description")), "") if has_description else "",
         ))
 
         return signals
@@ -115,13 +115,21 @@ class SignalExtractor:
             ))
 
         # HTTP server
-        if "ip http server" in raw_text:
+        if "ip http server" in raw_text and "no ip http server" not in raw_text:
             signals.append(Signal(
                 type="http_server",
                 value="enabled",
                 context="global",
                 block_type="global",
                 raw="ip http server",
+            ))
+        elif "no ip http server" in raw_text:
+            signals.append(Signal(
+                type="http_server",
+                value="disabled",
+                context="global",
+                block_type="global",
+                raw="no ip http server",
             ))
 
         # SNMP
@@ -133,13 +141,21 @@ class SignalExtractor:
                 block_type="global",
                 raw="snmp-server community",
             ))
-            if "public" in raw_text:
+            if "snmp-server community public" in raw_text:
                 signals.append(Signal(
                     type="snmp_community",
                     value="public",
                     context="global",
                     block_type="global",
                     raw="snmp-server community public",
+                ))
+            if "snmp-server community private" in raw_text:
+                signals.append(Signal(
+                    type="snmp_community",
+                    value="private",
+                    context="global",
+                    block_type="global",
+                    raw="snmp-server community private",
                 ))
 
         # Syslog
