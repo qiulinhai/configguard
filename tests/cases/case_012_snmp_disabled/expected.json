@@ -1,6 +1,6 @@
 {
   "case_id": "case_012_snmp_disabled",
-  "description": "SNMP v2c community configured - should FAIL",
+  "description": "SNMP enabled with weak community string - should FAIL",
   "pattern": "FAIL",
   "findings": [
     {
