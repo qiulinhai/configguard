@@ -1,11 +1,11 @@
-id: CISCO-AUTH-001
-name: AAA Required
+id: CISCO-AUTH-001b
+name: AAA Disabled
 category: authentication
 severity: HIGH
 
 match:
   type: regex
-  pattern: "AAA_MISSING"
+  pattern: "no aaa new-model"
 
 condition: present
 
@@ -14,8 +14,8 @@ finding:
   evidence: true
 
 description: >
-  AAA (Authentication, Authorization, Accounting) must be configured.
-  Device has no AAA configuration.
+  AAA has been explicitly disabled with 'no aaa new-model'.
+  This is a security risk - AAA should be enabled.
 
 remediation: >
   Configure 'aaa new-model' to enable AAA.
