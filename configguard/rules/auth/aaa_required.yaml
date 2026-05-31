@@ -3,6 +3,10 @@ name: AAA Required
 category: authentication
 severity: HIGH
 
+applies_to:
+  category:
+    - aaa
+
 match:
   type: regex
   pattern: "AAA_MISSING"

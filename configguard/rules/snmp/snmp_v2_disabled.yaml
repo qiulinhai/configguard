@@ -3,6 +3,10 @@ name: Disable SNMP v2c
 category: snmp-security
 severity: HIGH
 
+applies_to:
+  category:
+    - snmp
+
 match:
   type: regex
   pattern: "(public|private)"

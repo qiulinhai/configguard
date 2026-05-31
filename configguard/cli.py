@@ -10,10 +10,14 @@ from configguard.context import ContextBuilder
 from configguard.engine import RuleEngine
 from configguard.evidence import EvidenceBuilder
 from configguard.risk import RiskEngine
+from configguard.registry import create_signal_registry_with_defaults
 from configguard.output.json import generate_json_report
 from configguard.output.markdown import generate_markdown_report
 
 app = typer.Typer()
+
+# Initialize registry at module load time
+create_signal_registry_with_defaults()
 
 
 @app.command()

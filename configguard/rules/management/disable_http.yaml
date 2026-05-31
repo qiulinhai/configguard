@@ -3,6 +3,10 @@ name: Disable HTTP Server
 category: management-plane
 severity: HIGH
 
+applies_to:
+  category:
+    - http
+
 match:
   type: regex
   pattern: "HTTP_ENABLED"

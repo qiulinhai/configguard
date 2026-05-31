@@ -3,6 +3,10 @@ name: Secure VTY Configuration
 category: management-plane
 severity: HIGH
 
+applies_to:
+  category:
+    - vty
+
 match:
   type: regex
   pattern: "transport input telnet"
