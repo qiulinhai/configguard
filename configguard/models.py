@@ -33,6 +33,7 @@ class Finding(BaseModel):
     block_type: Optional[str] = None
     block_name: Optional[str] = None
     remediation: Optional[str] = None
+    evidence_summary: Optional[dict] = None  # Human-readable evidence from EvidenceBuilder
 
 
 class Block(BaseModel):
@@ -68,3 +69,26 @@ class Signal:
 
     def __hash__(self):
         return hash((self.type, self.context))
+
+
+@dataclass
+class CanonicalResource:
+    """Vendor-neutral semantic model of a security-relevant configuration resource.
+
+    This is the core IR v1 datatype - represents WHAT the config IS (semantics),
+    not HOW it is configured (syntax).
+    """
+    id: str                           # Globally unique: {domain}:{type}:{name}:{scope_hash}
+    resource_type: str                 # Semantic type: "auth.remote_access", "network.snmp"
+    name: str                          # Logical name: "ssh", "vty0-4", "GigabitEthernet0/1"
+    attributes: dict                  # Vendor-neutral semantic facts
+    scope: str                         # "global", "endpoint", "resource"
+    source: dict                       # Provenance: {vendor, parser, line, ...}
+    relationships: list[str] = None    # Links to other CanonicalResource IDs
+    tags: list[str] = None             # Classification hints: ["security-critical", "mgmt-plane"]
+
+    def __post_init__(self):
+        if self.relationships is None:
+            self.relationships = []
+        if self.tags is None:
+            self.tags = []
