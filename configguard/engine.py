@@ -157,26 +157,25 @@ class RuleEngine:
                     all_findings.append(finding)
         return all_findings
 
-    def evaluate_with_contexts(self, contexts: list[SignalContext]) -> list[Finding]:
+    def evaluate_with_contexts(self, contexts: list[SignalContext], rules: list = None) -> list[Finding]:
         """Evaluate rules against pre-built signal contexts.
 
         This method evaluates rules using semantic contexts (from ContextBuilder)
         instead of per-signal ConfigIR search. Results in one finding per
         semantic issue, not one finding per signal.
+
+        Context/Rule separation: contexts are pure semantic observations,
+        rules are policy interpretations. RuleEngine matches them.
         """
+        if rules is None:
+            rules = self.rules
+
         all_findings = []
         seen_findings = set()
 
         for context in contexts:
-            # Get rule_id from metadata (stored during context building)
-            rule_id = context.metadata.get("rule_id")
-            if not rule_id:
-                continue
-
-            # Find rule by id
-            relevant_rules = [r for r in self.rules if r.id == rule_id]
-            if not relevant_rules:
-                continue
+            # Find rules relevant for this context_key
+            relevant_rules = self._find_rules_for_context(context.context_key, rules)
 
             for rule in relevant_rules:
                 findings = rule.evaluate_with_context(context)
@@ -187,3 +186,25 @@ class RuleEngine:
                         all_findings.append(finding)
 
         return all_findings
+
+    def _find_rules_for_context(self, context_key: str, rules: list) -> list:
+        """Find rules relevant for a context based on context_key."""
+        relevant = []
+        for rule in rules:
+            rule_id_lower = rule.id.lower()
+            if context_key == "snmp_security" and "snmp" in rule_id_lower:
+                relevant.append(rule)
+            elif context_key.startswith("vty_") and ("vty" in rule_id_lower or "mgmt" in rule_id_lower):
+                relevant.append(rule)
+            elif context_key.startswith("interface_") and ("interface" in rule_id_lower or "if" in rule_id_lower or "intf" in rule_id_lower):
+                relevant.append(rule)
+            elif context_key == "global_auth" and ("auth" in rule_id_lower or "aaa" in rule_id_lower):
+                relevant.append(rule)
+            elif context_key == "global_services" and ("http" in rule_id_lower or "web" in rule_id_lower or "mgmt" in rule_id_lower):
+                # global_services includes HTTP, web, and general management-plane rules
+                relevant.append(rule)
+            elif context_key == "global_logging" and ("syslog" in rule_id_lower or "logging" in rule_id_lower or "log" in rule_id_lower):
+                relevant.append(rule)
+            elif context_key == "global_time" and ("ntp" in rule_id_lower or "time" in rule_id_lower or "clock" in rule_id_lower or "log" in rule_id_lower):
+                relevant.append(rule)
+        return relevant
