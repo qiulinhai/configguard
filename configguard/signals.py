@@ -105,7 +105,7 @@ class SignalExtractor:
         signals = []
         raw_text = "\n".join(config_ir.raw_lines)
 
-        # AAA
+        # AAA - emit signal for all three states
         if "aaa new-model" in raw_text and "no aaa new-model" not in raw_text:
             signals.append(Signal(
                 type="aaa_enabled",
@@ -122,15 +122,25 @@ class SignalExtractor:
                 block_type="global",
                 raw="no aaa new-model",
             ))
+        else:
+            # AAA not mentioned - emit missing signal with placeholder
+            signals.append(Signal(
+                type="aaa_enabled",
+                value="missing",
+                context="global",
+                block_type="global",
+                raw="AAA_MISSING",
+            ))
 
-        # HTTP server
+        # HTTP server - emit signal for all states
         if "ip http server" in raw_text and "no ip http server" not in raw_text:
+            # Only plain HTTP server (not secure-only)
             signals.append(Signal(
                 type="http_server",
                 value="enabled",
                 context="global",
                 block_type="global",
-                raw="ip http server",
+                raw="HTTP_ENABLED",
             ))
         elif "no ip http server" in raw_text:
             signals.append(Signal(
@@ -139,6 +149,22 @@ class SignalExtractor:
                 context="global",
                 block_type="global",
                 raw="no ip http server",
+            ))
+        elif "ip http secure-server" in raw_text and "ip http server" not in raw_text:
+            signals.append(Signal(
+                type="http_server",
+                value="secure-only",
+                context="global",
+                block_type="global",
+                raw="ip http secure-server",
+            ))
+        else:
+            signals.append(Signal(
+                type="http_server",
+                value="missing",
+                context="global",
+                block_type="global",
+                raw="HTTP_MISSING",
             ))
 
         # SNMP - extract version and all community strings
