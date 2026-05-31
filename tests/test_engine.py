@@ -104,7 +104,7 @@ def test_engine_evaluate_with_contexts():
     # Build contexts
     builder = ContextBuilder()
     engine = RuleEngine("configguard/rules")
-    contexts = builder.build_contexts(signals, engine.rules)
+    contexts = builder.build_contexts(signals)
 
     # Evaluate using contexts
     findings = engine.evaluate_with_contexts(contexts)
@@ -144,8 +144,8 @@ def test_rule_evaluate_with_context():
     context = SignalContext(
         context_key="snmp_security",
         signals=signals,
-        aggregated_evidence=["public", "private"],
-        metadata={"rule_id": "CISCO-SNMP-001", "community_count": 2},
+        aggregated_evidence=["snmp-server community public", "snmp-server community private"],
+        metadata={"community_count": 2},
     )
 
     findings = rule.evaluate_with_context(context)

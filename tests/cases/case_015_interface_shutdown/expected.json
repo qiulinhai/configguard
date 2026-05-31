@@ -1,0 +1,7 @@
+{
+  "case_id": "case_015_interface_shutdown",
+  "description": "Unused interface shutdown with description - EDGE case",
+  "pattern": "EDGE",
+  "findings": [],
+  "notes": "Interface with description but shutdown - PASS case for unused interface rule"
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "network.management:default:resource:http1",
+    "resource_type": "network.management",
+    "name": "default",
+    "attributes": {
+      "enabled": true,
+      "secure_only": false,
+      "insecure_enabled": true
+    },
+    "scope": "resource",
+    "source": {
+      "vendor": "cisco_ios",
+      "parser": "CiscoIOSParser",
+      "line": "ip http server"
+    },
+    "relationships": [],
+    "tags": ["mgmt-plane", "security-critical"]
+  }
+]

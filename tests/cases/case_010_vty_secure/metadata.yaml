@@ -1,0 +1,6 @@
+{
+  "case_id": "case_010_vty_secure",
+  "rule_id": "CISCO-MGMT-003",
+  "description": "VTY with SSH and access-class - secure but may need different rule",
+  "expected_finding": "EDGE"
+}

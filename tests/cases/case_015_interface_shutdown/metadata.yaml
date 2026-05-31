@@ -1,0 +1,6 @@
+{
+  "case_id": "case_015_interface_shutdown",
+  "rule_id": "CISCO-IF-001",
+  "description": "Unused interface properly shutdown with description",
+  "expected_finding": "PASS"
+}

@@ -1,0 +1,6 @@
+{
+  "case_id": "case_009_telnet_disabled",
+  "rule_id": "CISCO-MGMT-001",
+  "description": "Telnet disabled via SSH-only transport - should NOT trigger FAIL",
+  "expected_finding": "PASS"
+}

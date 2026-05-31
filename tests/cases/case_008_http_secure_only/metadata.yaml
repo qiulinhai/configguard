@@ -1,0 +1,7 @@
+{
+  "case_id": "case_008_http_secure_only",
+  "rule_id": "CISCO-MGMT-002",
+  "description": "HTTP secure-server only (no plain HTTP server) - EDGE case for rule semantic clarity",
+  "expected_finding": "PASS",
+  "edge_case": true
+}

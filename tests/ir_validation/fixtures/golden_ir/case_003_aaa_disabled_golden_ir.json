@@ -1,0 +1,19 @@
+[
+  {
+    "id": "auth.aaa:default:resource:aaa1",
+    "resource_type": "auth.aaa",
+    "name": "default",
+    "attributes": {
+      "enabled": false,
+      "model_type": "legacy"
+    },
+    "scope": "resource",
+    "source": {
+      "vendor": "cisco_ios",
+      "parser": "CiscoIOSParser",
+      "line": "no aaa new-model"
+    },
+    "relationships": [],
+    "tags": ["security-critical"]
+  }
+]

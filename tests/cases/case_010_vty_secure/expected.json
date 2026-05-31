@@ -1,0 +1,6 @@
+{
+  "case_id": "case_010_vty_secure",
+  "description": "VTY with SSH + access-class - EDGE case for CISCO-MGMT-003",
+  "pattern": "EDGE",
+  "findings": []
+}

@@ -1,8 +1,8 @@
-hostname Router1
 aaa new-model
+hostname Router1
 !
 line vty 0 4
- transport input telnet ssh
+ transport input telnet
  login local
 !
 end

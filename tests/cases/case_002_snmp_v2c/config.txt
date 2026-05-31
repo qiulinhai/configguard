@@ -1,4 +1,5 @@
 hostname Router1
+aaa new-model
 !
 snmp-server community public RO
 snmp-server community private RW

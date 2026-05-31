@@ -1,0 +1,6 @@
+{
+  "case_id": "case_007_http_disabled",
+  "description": "HTTP server disabled - should PASS",
+  "pattern": "PASS",
+  "findings": []
+}

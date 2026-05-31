@@ -1,0 +1,125 @@
+[
+  {
+    "id": "auth.aaa:default:resource:aaa1",
+    "resource_type": "auth.aaa",
+    "name": "default",
+    "attributes": {
+      "enabled": true,
+      "model_type": "new-model"
+    },
+    "scope": "resource",
+    "source": {
+      "vendor": "cisco_ios",
+      "parser": "CiscoIOSParser",
+      "line": "aaa new-model"
+    },
+    "relationships": [],
+    "tags": ["security-critical"]
+  },
+  {
+    "id": "auth.remote_access:vty0-4:endpoint:vty04",
+    "resource_type": "auth.remote_access",
+    "name": "vty0-4",
+    "attributes": {
+      "methods": ["telnet", "ssh"],
+      "insecure_methods": ["telnet"],
+      "secure_methods": ["ssh"],
+      "authentication_required": true
+    },
+    "scope": "endpoint",
+    "source": {
+      "vendor": "cisco_ios",
+      "parser": "CiscoIOSParser",
+      "line": "transport input telnet ssh"
+    },
+    "relationships": [],
+    "tags": ["mgmt-plane", "security-critical"]
+  },
+  {
+    "id": "network.snmp:default:resource:snmp1",
+    "resource_type": "network.snmp",
+    "name": "default",
+    "attributes": {
+      "enabled": true,
+      "version": "v2c",
+      "communities": ["public"],
+      "access_level": ["RO"]
+    },
+    "scope": "resource",
+    "source": {
+      "vendor": "cisco_ios",
+      "parser": "CiscoIOSParser",
+      "line": "snmp-server community public RO"
+    },
+    "relationships": [],
+    "tags": ["mgmt-plane"]
+  },
+  {
+    "id": "network.management:default:resource:http1",
+    "resource_type": "network.management",
+    "name": "default",
+    "attributes": {
+      "enabled": true,
+      "secure_only": false,
+      "insecure_enabled": true
+    },
+    "scope": "resource",
+    "source": {
+      "vendor": "cisco_ios",
+      "parser": "CiscoIOSParser",
+      "line": "ip http server"
+    },
+    "relationships": [],
+    "tags": ["mgmt-plane", "security-critical"]
+  },
+  {
+    "id": "logging.syslog:default:resource:syslog1",
+    "resource_type": "logging.syslog",
+    "name": "default",
+    "attributes": {
+      "enabled": true,
+      "remote_hosts": ["10.1.1.1"]
+    },
+    "scope": "resource",
+    "source": {
+      "vendor": "cisco_ios",
+      "parser": "CiscoIOSParser",
+      "line": "logging host 10.1.1.1"
+    },
+    "relationships": [],
+    "tags": ["observability"]
+  },
+  {
+    "id": "monitoring.ntp:default:resource:ntp1",
+    "resource_type": "monitoring.ntp",
+    "name": "default",
+    "attributes": {
+      "enabled": true,
+      "servers": ["10.1.1.2"]
+    },
+    "scope": "resource",
+    "source": {
+      "vendor": "cisco_ios",
+      "parser": "CiscoIOSParser",
+      "line": "ntp server 10.1.1.2"
+    },
+    "relationships": [],
+    "tags": ["observability"]
+  },
+  {
+    "id": "network.interface:GigabitEthernet0/1:endpoint:gi01",
+    "resource_type": "network.interface",
+    "name": "GigabitEthernet0/1",
+    "attributes": {
+      "enabled": false
+    },
+    "scope": "endpoint",
+    "source": {
+      "vendor": "cisco_ios",
+      "parser": "CiscoIOSParser",
+      "line": "shutdown"
+    },
+    "relationships": [],
+    "tags": []
+  }
+]

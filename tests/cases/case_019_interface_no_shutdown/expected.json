@@ -1,0 +1,11 @@
+{
+  "case_id": "case_019_interface_no_shutdown",
+  "description": "Interface without shutdown - should FAIL",
+  "pattern": "FAIL",
+  "findings": [
+    {
+      "rule_id": "CISCO-IF-001",
+      "status": "FAIL"
+    }
+  ]
+}

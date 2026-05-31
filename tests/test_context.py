@@ -31,7 +31,7 @@ class TestContextBuilder:
 
     def test_empty_signals_returns_empty_contexts(self):
         builder = ContextBuilder()
-        contexts = builder.build_contexts([], [])
+        contexts = builder.build_contexts([])
         assert contexts == []
 
     def test_single_snmp_community_groups_correctly(self):
@@ -46,14 +46,13 @@ class TestContextBuilder:
             id = "CISCO-SNMP-001"
 
         builder = ContextBuilder()
-        contexts = builder.build_contexts(signals, [MockRule()])
+        contexts = builder.build_contexts(signals)
 
         assert len(contexts) == 1
         ctx = contexts[0]
-        assert ctx.metadata["rule_id"] == "CISCO-SNMP-001"
         assert ctx.context_key == "snmp_security"
         assert len(ctx.signals) == 1
-        assert "public" in ctx.aggregated_evidence
+        assert "snmp-server community public" in ctx.aggregated_evidence
 
     def test_multiple_snmp_communities_group_into_single_context(self):
         """Multiple SNMP communities should aggregate into one context."""
@@ -70,14 +69,14 @@ class TestContextBuilder:
             id = "CISCO-SNMP-001"
 
         builder = ContextBuilder()
-        contexts = builder.build_contexts(signals, [MockRule()])
+        contexts = builder.build_contexts(signals)
 
         # Should be ONE context, not three
         assert len(contexts) == 1
         ctx = contexts[0]
         assert ctx.context_key == "snmp_security"
         assert len(ctx.signals) == 3
-        assert set(ctx.aggregated_evidence) == {"public", "private", "v2c"}
+        assert set(ctx.aggregated_evidence) == {"snmp-server community", "snmp-server community public", "snmp-server community private"}
         assert ctx.metadata["community_count"] == 2
 
     def test_multiple_vty_lines_separate_contexts(self):
@@ -93,7 +92,7 @@ class TestContextBuilder:
             id = "CISCO-MGMT-001"
 
         builder = ContextBuilder()
-        contexts = builder.build_contexts(signals, [MockRule()])
+        contexts = builder.build_contexts(signals)
 
         assert len(contexts) == 2
         context_keys = {ctx.context_key for ctx in contexts}
@@ -113,7 +112,7 @@ class TestContextBuilder:
             id = "CISCO-INTERFACE-001"
 
         builder = ContextBuilder()
-        contexts = builder.build_contexts(signals, [MockRule()])
+        contexts = builder.build_contexts(signals)
 
         assert len(contexts) == 2
         context_keys = {ctx.context_key for ctx in contexts}
@@ -121,7 +120,10 @@ class TestContextBuilder:
         assert "interface_GigabitEthernet0_1" in context_keys
 
     def test_mixed_signals_filter_by_rule(self):
-        """Context builder should filter clusters based on rule type."""
+        """Context builder builds ALL semantic contexts - RuleEngine filters by rule type.
+
+        This is the pure semantic approach: contexts don't know about rules.
+        """
         signals = [
             Signal(type="snmp_community", value="public", context="global",
                    block_type="global", raw="snmp-server community public"),
@@ -129,15 +131,14 @@ class TestContextBuilder:
                    block_type="line", raw="transport input telnet"),
         ]
 
-        # SNMP rule should only get SNMP context
-        class SnmpRule:
-            id = "CISCO-SNMP-001"
-
         builder = ContextBuilder()
-        contexts = builder.build_contexts(signals, [SnmpRule()])
+        contexts = builder.build_contexts(signals)
 
-        assert len(contexts) == 1
-        assert contexts[0].context_key == "snmp_security"
+        # ContextBuilder builds ALL contexts (pure semantic, no rule filtering)
+        assert len(contexts) == 2
+        context_keys = {ctx.context_key for ctx in contexts}
+        assert "snmp_security" in context_keys
+        assert "vty_0_4" in context_keys
 
 
 class TestContextKeyExpansion:
@@ -204,11 +205,11 @@ class TestAggregatedEvidence:
             id = "CISCO-SNMP-001"
 
         builder = ContextBuilder()
-        contexts = builder.build_contexts(signals, [MockRule()])
+        contexts = builder.build_contexts(signals)
 
         assert len(contexts) == 1
         ctx = contexts[0]
-        assert set(ctx.aggregated_evidence) == {"public", "private", "v2c"}
+        assert set(ctx.aggregated_evidence) == {"snmp-server community", "snmp-server community public", "snmp-server community private"}
         assert ctx.metadata["community_count"] == 2
         assert ctx.metadata["version"] == "v2c"
 
@@ -227,11 +228,11 @@ class TestAggregatedEvidence:
             id = "CISCO-MGMT-001"
 
         builder = ContextBuilder()
-        contexts = builder.build_contexts(signals, [MockRule()])
+        contexts = builder.build_contexts(signals)
 
         assert len(contexts) == 1
         ctx = contexts[0]
-        assert set(ctx.aggregated_evidence) == {"telnet", "ssh", "local"}
+        assert set(ctx.aggregated_evidence) == {"transport input telnet", "transport input telnet ssh", "login local"}
         assert "telnet" in ctx.metadata.get("transport", [])
         assert "ssh" in ctx.metadata.get("transport", [])
 
@@ -271,7 +272,7 @@ class TestIntegrationSnmpSingleFinding:
 
         # Build contexts for SNMP rules
         snmp_rules = [r for r in engine.rules if "snmp" in r.id.lower()]
-        contexts = builder.build_contexts(signals, snmp_rules)
+        contexts = builder.build_contexts(signals)
 
         # Evaluate with contexts
         findings = engine.evaluate_with_contexts(contexts)

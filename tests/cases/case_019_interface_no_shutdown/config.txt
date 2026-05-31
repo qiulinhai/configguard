@@ -1,0 +1,7 @@
+aaa new-model
+hostname Router1
+!
+interface GigabitEthernet0/1
+ no shutdown
+!
+end

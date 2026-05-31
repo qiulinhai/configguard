@@ -1,0 +1,11 @@
+{
+  "case_id": "case_012_snmp_disabled",
+  "description": "SNMP v2c community configured - should FAIL",
+  "pattern": "FAIL",
+  "findings": [
+    {
+      "rule_id": "CISCO-SNMP-001",
+      "status": "FAIL"
+    }
+  ]
+}

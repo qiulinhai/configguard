@@ -1,0 +1,6 @@
+{
+  "case_id": "case_013_syslog_configured",
+  "description": "Syslog configured with remote host - should PASS",
+  "pattern": "PASS",
+  "findings": []
+}

@@ -1,0 +1,6 @@
+{
+  "case_id": "case_009_telnet_disabled",
+  "description": "Telnet disabled (SSH only) - should PASS",
+  "pattern": "PASS",
+  "findings": []
+}

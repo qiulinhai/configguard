@@ -1,0 +1,6 @@
+hostname Router1
+!
+line vty 0 4
+ login
+!
+end

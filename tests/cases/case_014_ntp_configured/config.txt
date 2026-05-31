@@ -1,0 +1,6 @@
+hostname Router1
+aaa new-model
+!
+ntp server 10.1.1.50
+!
+end

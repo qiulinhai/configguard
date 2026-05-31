@@ -1,0 +1,7 @@
+{
+  "case_id": "case_020_interface_active",
+  "description": "Active interface with description - EDGE case",
+  "pattern": "EDGE",
+  "findings": [],
+  "notes": "Interface active but has description (may be intentional)"
+}

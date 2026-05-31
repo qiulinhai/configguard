@@ -1,0 +1,6 @@
+{
+  "case_id": "case_007_http_disabled",
+  "rule_id": "CISCO-MGMT-002",
+  "description": "HTTP server disabled - should NOT trigger CISCO-MGMT-002",
+  "expected_finding": "PASS"
+}

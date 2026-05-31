@@ -1,0 +1,21 @@
+[
+  {
+    "id": "network.snmp:default:resource:snmp1",
+    "resource_type": "network.snmp",
+    "name": "default",
+    "attributes": {
+      "enabled": true,
+      "version": "v2c",
+      "communities": ["public", "private"],
+      "access_level": ["RO", "RW"]
+    },
+    "scope": "resource",
+    "source": {
+      "vendor": "cisco_ios",
+      "parser": "CiscoIOSParser",
+      "line": "snmp-server community public RO"
+    },
+    "relationships": [],
+    "tags": ["mgmt-plane"]
+  }
+]

@@ -1,0 +1,6 @@
+{
+  "case_id": "case_011_vty_insecure",
+  "rule_id": "CISCO-MGMT-001",
+  "description": "VTY with telnet enabled alongside SSH",
+  "expected_finding": "FAIL"
+}

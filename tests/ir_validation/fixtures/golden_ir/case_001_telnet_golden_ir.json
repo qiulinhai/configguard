@@ -1,0 +1,21 @@
+[
+  {
+    "id": "auth.remote_access:vty0-4:endpoint:vty04",
+    "resource_type": "auth.remote_access",
+    "name": "vty0-4",
+    "attributes": {
+      "methods": ["telnet", "ssh"],
+      "insecure_methods": ["telnet"],
+      "secure_methods": ["ssh"],
+      "authentication_required": true
+    },
+    "scope": "endpoint",
+    "source": {
+      "vendor": "cisco_ios",
+      "parser": "CiscoIOSParser",
+      "line": "transport input telnet ssh"
+    },
+    "relationships": [],
+    "tags": ["mgmt-plane", "security-critical"]
+  }
+]

@@ -1,0 +1,7 @@
+{
+  "case_id": "case_008_http_secure_only",
+  "description": "Only HTTP secure-server enabled (no ip http server) - EDGE case",
+  "pattern": "EDGE",
+  "findings": [],
+  "notes": "ip http secure-server without ip http server should NOT trigger FAIL"
+}

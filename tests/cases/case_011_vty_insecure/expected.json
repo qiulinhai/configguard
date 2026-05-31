@@ -1,0 +1,11 @@
+{
+  "case_id": "case_011_vty_insecure",
+  "description": "VTY with telnet enabled (mixed ssh telnet) - should FAIL",
+  "pattern": "FAIL",
+  "findings": [
+    {
+      "rule_id": "CISCO-MGMT-001",
+      "status": "FAIL"
+    }
+  ]
+}

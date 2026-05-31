@@ -1,0 +1,6 @@
+aaa new-model
+hostname Router1
+!
+no ip http server
+!
+end

@@ -1,0 +1,12 @@
+hostname Router1
+!
+aaa new-model
+!
+interface GigabitEthernet0/1
+ shutdown
+ description Management Interface
+!
+interface GigabitEthernet0/2
+ no shutdown
+!
+end

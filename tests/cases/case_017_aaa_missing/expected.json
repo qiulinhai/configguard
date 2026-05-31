@@ -1,0 +1,11 @@
+{
+  "case_id": "case_017_aaa_missing",
+  "description": "AAA not configured - should FAIL",
+  "pattern": "FAIL",
+  "findings": [
+    {
+      "rule_id": "CISCO-AUTH-001",
+      "status": "FAIL"
+    }
+  ]
+}

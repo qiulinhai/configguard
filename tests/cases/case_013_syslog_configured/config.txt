@@ -1,0 +1,7 @@
+hostname Router1
+aaa new-model
+!
+logging host 10.1.1.100
+logging trap informational
+!
+end

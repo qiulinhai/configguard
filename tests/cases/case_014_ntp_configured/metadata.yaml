@@ -1,0 +1,6 @@
+{
+  "case_id": "case_014_ntp_configured",
+  "rule_id": "CISCO-TIME-001",
+  "description": "NTP server configured",
+  "expected_finding": "PASS"
+}

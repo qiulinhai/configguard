@@ -1,0 +1,6 @@
+{
+  "case_id": "case_018_aaa_present",
+  "description": "AAA configured - should PASS",
+  "pattern": "PASS",
+  "findings": []
+}

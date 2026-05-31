@@ -1,0 +1,6 @@
+{
+  "case_id": "case_014_ntp_configured",
+  "description": "NTP server configured - should PASS",
+  "pattern": "PASS",
+  "findings": []
+}

@@ -1,0 +1,6 @@
+{
+  "case_id": "case_013_syslog_configured",
+  "rule_id": "CISCO-LOG-001",
+  "description": "Remote syslog configured",
+  "expected_finding": "PASS"
+}
