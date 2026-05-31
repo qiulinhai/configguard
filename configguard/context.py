@@ -1,4 +1,5 @@
 """Context Builder for semantic signal grouping."""
+import hashlib
 import uuid
 from dataclasses import dataclass, field, asdict
 from typing import Any
@@ -44,7 +45,7 @@ class SignalContext:
     signals: list[Signal] = field(default_factory=list)
     aggregated_evidence: list[str] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
-    id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
+    id: str = field(default="")
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize context to dictionary for JSON output."""
@@ -65,6 +66,12 @@ class SignalContext:
             "metadata": self.metadata,
         }
 
+    @staticmethod
+    def _compute_context_id(context_key: str, evidence: list[str]) -> str:
+        """Compute stable deterministic ID from context content."""
+        content = f"{context_key}:{','.join(sorted(evidence))}"
+        return hashlib.sha256(content.encode()).hexdigest()[:8]
+
 
 class ContextBuilder:
     """Builds signal contexts for rule evaluation.
@@ -73,25 +80,23 @@ class ContextBuilder:
     rules evaluate against contexts (not individual signals).
     """
 
-    def build_contexts(self, signals: list[Signal], rules: list) -> list[SignalContext]:
-        """Group signals into contexts for rule evaluation.
+    def build_contexts(self, signals: list[Signal]) -> list[SignalContext]:
+        """Group signals into semantic contexts.
 
-        Each context is scoped to a specific rule_id and contains
-        all signals relevant to that rule's evaluation.
+        Produces pure semantic contexts - no rule knowledge.
+        Contexts can be evaluated by any compatible rule.
         """
         if not signals:
             return []
 
-        # Step 1: Cluster signals by context key
+        # Step 1: Cluster signals by semantic type
         clusters = self._cluster_signals(signals)
 
-        # Step 2: Build contexts for each rule's relevant clusters
+        # Step 2: Build pure contexts per cluster
         contexts = []
-        for rule in rules:
-            relevant_clusters = self._get_relevant_clusters_for_rule(rule, clusters)
-            for cluster_key, cluster_signals in relevant_clusters.items():
-                context = self._build_context(rule.id, cluster_key, cluster_signals)
-                contexts.append(context)
+        for cluster_key, cluster_signals in clusters.items():
+            context = self._build_context(cluster_key, cluster_signals)
+            contexts.append(context)
 
         return contexts
 
@@ -160,16 +165,15 @@ class ContextBuilder:
 
         return relevant
 
-    def _build_context(self, rule_id: str, cluster_key: str, signals: list[Signal]) -> SignalContext:
+    def _build_context(self, cluster_key: str, signals: list[Signal]) -> SignalContext:
         """Build a single context from clustered signals."""
-        # Aggregate evidence values
-        evidence_values = [s.value for s in signals]
+        # Aggregate evidence values (use raw for pattern matching)
+        evidence_values = [s.raw for s in signals]
 
         # Build metadata
         metadata = {
             "signal_count": len(signals),
             "signal_types": list({s.type for s in signals}),
-            "rule_id": rule_id,  # Track which rule this context is for
         }
 
         # Add specific metadata based on context type
@@ -190,7 +194,11 @@ class ContextBuilder:
             if descriptions:
                 metadata["description"] = descriptions[0]
 
+        # Compute deterministic ID
+        context_id = SignalContext._compute_context_id(cluster_key, evidence_values)
+
         return SignalContext(
+            id=context_id,
             context_key=cluster_key,
             signals=signals,
             aggregated_evidence=evidence_values,
