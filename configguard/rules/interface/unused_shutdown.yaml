@@ -5,16 +5,16 @@ severity: MEDIUM
 
 match:
   type: regex
-  pattern: "interface.*GigabitEthernet"
+  pattern: "no shutdown"
 
 condition: present
 
 finding:
-  status: WARN
+  status: FAIL
   evidence: true
 
 description: >
-  Unused interfaces should be shutdown to reduce attack surface.
+  Unused interfaces without shutdown expose device to attacks.
 
 remediation: >
   Configure 'shutdown' on unused interfaces.

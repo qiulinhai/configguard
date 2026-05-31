@@ -15,3 +15,9 @@ finding:
 
 description: >
   AAA (Authentication, Authorization, Accounting) must be enabled.
+
+remediation: >
+  Configure 'aaa new-model' to enable AAA.
+
+description: >
+  AAA (Authentication, Authorization, Accounting) must be enabled.

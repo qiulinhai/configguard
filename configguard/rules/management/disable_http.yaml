@@ -5,7 +5,7 @@ severity: HIGH
 
 match:
   type: regex
-  pattern: "ip http server"
+  pattern: "HTTP_ENABLED"
 
 condition: present
 
