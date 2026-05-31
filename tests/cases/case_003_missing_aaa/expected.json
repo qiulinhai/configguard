@@ -1,6 +1,10 @@
 {
   "case_id": "case_003_missing_aaa",
-  "description": "AAA explicitly disabled (no aaa new-model) - EDGE case",
-  "pattern": "EDGE",
-  "findings": []
+  "description": "AAA explicitly disabled (no aaa new-model)",
+  "findings": [
+    {
+      "rule_id": "CISCO-AUTH-001b",
+      "status": "FAIL"
+    }
+  ]
 }

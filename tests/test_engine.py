@@ -74,7 +74,8 @@ def test_missing_aaa_case(load_test_case):
     engine = RuleEngine("configguard/rules")
     findings = engine.evaluate(ir)
 
-    aaa_findings = [f for f in findings if f.rule_id == "CISCO-AUTH-001"]
+    # CISCO-AUTH-001b: detects AAA explicitly disabled (no aaa new-model)
+    aaa_findings = [f for f in findings if f.rule_id == "CISCO-AUTH-001b"]
     assert len(aaa_findings) == 1
     assert aaa_findings[0].status.value == "FAIL"
 
