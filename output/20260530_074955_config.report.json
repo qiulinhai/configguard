@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0",
+  "summary": {
+    "total": 2,
+    "pass": 0,
+    "fail": 2,
+    "warnings": 0
+  },
+  "findings": [
+    {
+      "rule_id": "CISCO-SNMP-001",
+      "rule_name": "Disable SNMP v2c",
+      "category": "snmp-security",
+      "severity": "HIGH",
+      "status": "FAIL",
+      "evidence": "public",
+      "block_type": null,
+      "block_name": null,
+      "remediation": "Use SNMPv3 with authpriv. If SNMP v2c required, use strong community strings."
+    },
+    {
+      "rule_id": "CISCO-SNMP-001",
+      "rule_name": "Disable SNMP v2c",
+      "category": "snmp-security",
+      "severity": "HIGH",
+      "status": "FAIL",
+      "evidence": "private",
+      "block_type": null,
+      "block_name": null,
+      "remediation": "Use SNMPv3 with authpriv. If SNMP v2c required, use strong community strings."
+    }
+  ],
+  "metadata": {
+    "config_name": "config",
+    "device_type": "Cisco IOS",
+    "parser_version": "0.1.0",
+    "rules_version": "0.1.0",
+    "timestamp": "2026-05-29T23:49:55.830838+00:00"
+  }
+}

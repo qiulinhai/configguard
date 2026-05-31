@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0",
+  "summary": {
+    "total": 2,
+    "pass": 0,
+    "fail": 2,
+    "warnings": 0
+  },
+  "findings": [
+    {
+      "rule_id": "CISCO-AUTH-001b",
+      "rule_name": "AAA Missing",
+      "category": "authentication",
+      "severity": "HIGH",
+      "status": "FAIL",
+      "evidence": "AAA_MISSING",
+      "block_type": "global",
+      "block_name": "global_auth",
+      "remediation": "Configure 'aaa new-model' to enable AAA."
+    },
+    {
+      "rule_id": "CISCO-MGMT-002",
+      "rule_name": "Disable HTTP Server",
+      "category": "management-plane",
+      "severity": "HIGH",
+      "status": "FAIL",
+      "evidence": "HTTP_ENABLED",
+      "block_type": "global",
+      "block_name": "global_services",
+      "remediation": "Use 'no ip http server' to disable and use SSH for management."
+    }
+  ],
+  "metadata": {
+    "config_name": "config",
+    "device_type": "Cisco IOS",
+    "parser_version": "0.1.0",
+    "rules_version": "0.1.0",
+    "timestamp": "2026-05-30T00:31:46.823592+00:00"
+  }
+}

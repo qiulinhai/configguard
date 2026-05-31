@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "summary": {
+    "total": 1,
+    "pass": 0,
+    "fail": 1,
+    "warnings": 0
+  },
+  "findings": [
+    {
+      "rule_id": "CISCO-MGMT-002",
+      "rule_name": "Disable HTTP Server",
+      "category": "management-plane",
+      "severity": "HIGH",
+      "status": "FAIL",
+      "evidence": "no ip http server",
+      "block_type": "global",
+      "block_name": "global_services",
+      "remediation": "Use 'no ip http server' to disable and use SSH for management."
+    }
+  ],
+  "metadata": {
+    "config_name": "config",
+    "device_type": "Cisco IOS",
+    "parser_version": "0.1.0",
+    "rules_version": "0.1.0",
+    "timestamp": "2026-05-30T00:05:58.524570+00:00"
+  }
+}

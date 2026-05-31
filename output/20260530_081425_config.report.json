@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "summary": {
+    "total": 1,
+    "pass": 1,
+    "fail": 0,
+    "warnings": 0
+  },
+  "findings": [
+    {
+      "rule_id": "CISCO-LOG-002",
+      "rule_name": "NTP Configuration Required",
+      "category": "logging",
+      "severity": "MEDIUM",
+      "status": "PASS",
+      "evidence": "ntp server",
+      "block_type": "global",
+      "block_name": "global_time",
+      "remediation": ""
+    }
+  ],
+  "metadata": {
+    "config_name": "config",
+    "device_type": "Cisco IOS",
+    "parser_version": "0.1.0",
+    "rules_version": "0.1.0",
+    "timestamp": "2026-05-30T00:14:25.124668+00:00"
+  }
+}

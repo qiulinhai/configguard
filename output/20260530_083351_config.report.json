@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "summary": {
+    "total": 1,
+    "pass": 1,
+    "fail": 0,
+    "warnings": 0
+  },
+  "findings": [
+    {
+      "rule_id": "CISCO-AUTH-001",
+      "rule_name": "AAA Required",
+      "category": "authentication",
+      "severity": "HIGH",
+      "status": "PASS",
+      "evidence": "no aaa new-model",
+      "block_type": "global",
+      "block_name": "global_auth",
+      "remediation": "Configure 'aaa new-model' to enable AAA.\n"
+    }
+  ],
+  "metadata": {
+    "config_name": "config",
+    "device_type": "Cisco IOS",
+    "parser_version": "0.1.0",
+    "rules_version": "0.1.0",
+    "timestamp": "2026-05-30T00:33:51.884522+00:00"
+  }
+}

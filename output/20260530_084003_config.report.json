@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "summary": {
+    "total": 1,
+    "pass": 0,
+    "fail": 1,
+    "warnings": 0
+  },
+  "findings": [
+    {
+      "rule_id": "CISCO-IF-001",
+      "rule_name": "Unused Interfaces Must Be Shutdown",
+      "category": "interface-hygiene",
+      "severity": "MEDIUM",
+      "status": "FAIL",
+      "evidence": "no shutdown, description Uplink to Core",
+      "block_type": "global",
+      "block_name": "interface_GigabitEthernet0_1",
+      "remediation": "Configure 'shutdown' on unused interfaces."
+    }
+  ],
+  "metadata": {
+    "config_name": "config",
+    "device_type": "Cisco IOS",
+    "parser_version": "0.1.0",
+    "rules_version": "0.1.0",
+    "timestamp": "2026-05-30T00:40:03.448943+00:00"
+  }
+}

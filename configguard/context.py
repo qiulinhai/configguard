@@ -1,57 +1,80 @@
-"""Context Builder for semantic signal grouping."""
+"""Context Builder for semantic signal grouping.
+
+v0.2.1: Implements Type/Instance separation in SignalContext.
+
+This module provides the Aggregation Layer of ConfigGuard's three-layer IR model:
+- Groups signals into semantic contexts
+- Separates context_type (what kind of thing) from instance_id (which specific thing)
+- Provides guard rails against context explosion attacks
+"""
 import hashlib
-import uuid
-from dataclasses import dataclass, field, asdict
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, Optional
+
 from configguard.models import Signal
+from configguard.registry import SignalRegistry, SignalDefinition
+
+# Guard rail: maximum instances per category per node
+MAX_CONTEXT_INSTANCES_PER_NODE = 1000
 
 
-SIGNAL_CONTEXT_CLUSTERS = {
-    # SNMP: all SNMP signals cluster by security context
-    "snmp_version": "snmp_security",
-    "snmp_community": "snmp_security",
-
-    # VTY: per-VTY instance (context already contains "vty" prefix after normalization)
-    "transport_input": "{context}",
-    "auth_method": "{context}",
-
-    # Interface: per-interface
-    "interface_state": "interface_{context}",
-    "interface_description": "interface_{context}",
-
-    # Global: single context
-    "aaa_enabled": "global_auth",
-    "http_server": "global_services",
-    "syslog_host": "global_logging",
-    "ntp_server": "global_time",
-}
+class ContextOverflowError(RuntimeError):
+    """Raised when context instances exceed the safety limit."""
+    pass
 
 
 @dataclass
 class SignalContext:
-    """A semantic grouping of signals relevant to a single rule evaluation.
+    """Semantic grouping of signals for rule evaluation.
 
-    This is the core semantic unit of ConfigGuard's reasoning layer.
-    All rule evaluations operate on contexts, not individual signals.
+    v0.2.1 introduces Type/Instance separation:
+    - context_type: The semantic category (e.g., "snmp", "vty", "interface")
+    - instance_id: The specific instance identifier (None for singletons)
 
-    Schema (frozen v0.2.1):
-        id: str - Unique identifier (auto-generated UUID)
-        context_key: str - Semantic type (e.g., "snmp_security", "vty_0_4")
-        signals: list[Signal] - Original signals (preserves audit trail)
-        aggregated_evidence: list[str] - Evidence values for pattern matching
-        metadata: dict - Extensible metadata
+    This separation enables:
+    - O(1) rule matching by type
+    - Clear distinction between singleton and per-instance contexts
+    - Future extensibility to hierarchical contexts
+
+    Attributes:
+        context_type: Semantic category ("snmp", "vty", "interface", etc.)
+        instance_id: Specific instance identifier (None for singleton contexts)
+        category: Mirrors context_type (保留概念边界 for future flexibility)
+        signals: Original signals (preserves audit trail)
+        aggregated_evidence: Evidence values for pattern matching
+        metadata: Extensible metadata
+        id: Stable deterministic ID
     """
-    context_key: str
+    context_type: str
+    instance_id: Optional[str]
     signals: list[Signal] = field(default_factory=list)
     aggregated_evidence: list[str] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
     id: str = field(default="")
 
+    # Alias for category (concept boundary preserved)
+    @property
+    def category(self) -> str:
+        """category mirrors context_type -保留概念边界."""
+        return self.context_type
+
+    @property
+    def context_key(self) -> str:
+        """Backward-compatible context_key for v0.2 code.
+
+        Returns context_type for singleton, or 'type_instance' for per-instance.
+        """
+        if self.instance_id is None:
+            return self.context_type
+        return f"{self.context_type}_{self.instance_id}"
+
     def to_dict(self) -> dict[str, Any]:
         """Serialize context to dictionary for JSON output."""
         return {
             "id": self.id,
-            "context_key": self.context_key,
+            "context_type": self.context_type,
+            "instance_id": self.instance_id,
+            "category": self.category,
             "signals": [
                 {
                     "type": s.type,
@@ -67,32 +90,53 @@ class SignalContext:
         }
 
     @staticmethod
-    def _compute_context_id(context_key: str, evidence: list[str]) -> str:
+    def _compute_context_id(context_type: str, instance_id: Optional[str], evidence: list[str]) -> str:
         """Compute stable deterministic ID from context content."""
-        content = f"{context_key}:{','.join(sorted(evidence))}"
-        return hashlib.sha256(content.encode()).hexdigest()[:8]
+        key = f"{context_type}:{instance_id or 'singleton'}:{','.join(sorted(evidence))}"
+        return hashlib.sha256(key.encode()).hexdigest()[:8]
 
 
 class ContextBuilder:
-    """Builds signal contexts for rule evaluation.
+    """Builds signal contexts using SignalRegistry metadata.
 
-    Groups signals by rule-relevant semantic dimensions so that
-    rules evaluate against contexts (not individual signals).
+    v0.2.1 refactoring:
+    - Uses SignalRegistry for metadata instead of hardcoded SIGNAL_CONTEXT_CLUSTERS
+    - Implements Type/Instance separation
+    - Provides guard rails against context explosion
     """
+
+    def __init__(self, registry: Optional[SignalRegistry] = None):
+        """Initialize with optional registry.
+
+        Args:
+            registry: SignalRegistry instance. If None, uses singleton.
+        """
+        self.registry = registry or SignalRegistry.get_instance()
 
     def build_contexts(self, signals: list[Signal]) -> list[SignalContext]:
         """Group signals into semantic contexts.
 
-        Produces pure semantic contexts - no rule knowledge.
-        Contexts can be evaluated by any compatible rule.
+        Uses SignalRegistry to determine:
+        - How to cluster signals (via aggregation_strategy)
+        - What context_template to use
+
+        Guard rails:
+        - Counts per-instance contexts per category
+        - Raises ContextOverflowError if limit exceeded
         """
         if not signals:
             return []
 
-        # Step 1: Cluster signals by semantic type
+        # Track instance counts for guard rail
+        instance_counts: dict[str, set] = {}
+
+        # Step 1: Cluster signals by context
         clusters = self._cluster_signals(signals)
 
-        # Step 2: Build pure contexts per cluster
+        # Step 2: Apply guard rail check
+        self._check_instance_limits(instance_counts)
+
+        # Step 3: Build contexts per cluster
         contexts = []
         for cluster_key, cluster_signals in clusters.items():
             context = self._build_context(cluster_key, cluster_signals)
@@ -101,72 +145,69 @@ class ContextBuilder:
         return contexts
 
     def _cluster_signals(self, signals: list[Signal]) -> dict[str, list[Signal]]:
-        """Cluster signals by context key."""
+        """Cluster signals by context using registry metadata."""
         clusters: dict[str, list[Signal]] = {}
 
         for signal in signals:
-            cluster_key = self._get_cluster_key(signal)
-            if cluster_key not in clusters:
-                clusters[cluster_key] = []
-            clusters[cluster_key].append(signal)
+            defn = self.registry.get(signal.type)
+            if not defn:
+                # Unknown signal type, skip or use signal.type as fallback
+                cluster_key = signal.type
+            else:
+                cluster_key = self._get_cluster_key(defn, signal)
+
+            clusters.setdefault(cluster_key, []).append(signal)
 
         return clusters
 
-    def _get_cluster_key(self, signal: Signal) -> str:
-        """Get the cluster key for a signal."""
-        template = SIGNAL_CONTEXT_CLUSTERS.get(signal.type, signal.type)
-        return self._expand_context_key(template, signal)
+    def _get_cluster_key(self, defn: SignalDefinition, signal: Signal) -> str:
+        """Get cluster key from signal definition and signal.
 
-    def _expand_context_key(self, template: str, signal: Signal) -> str:
-        """Expand context key template with signal context."""
+        Uses context_template to determine how to group this signal:
+        - "singleton": Single global context for this signal type
+        - "{context}": Use signal's own context as instance identifier
+        - "interface_{context}": Prefix with "interface_" + instance
+        """
+        template = defn.context_template
+
+        if template == "singleton":
+            # Singleton: use category as cluster key
+            return defn.category
+
+        # Dynamic template expansion
         if "{context}" in template:
             normalized = signal.context.replace(" ", "_").replace("/", "_")
-            return template.format(context=normalized)
+            # Remove template prefix if present (e.g., "interface_{context}")
+            prefix = template.split("{")[0]
+            return f"{prefix}{normalized}" if prefix else normalized
+
+        # Static template (shouldn't happen after validation)
         return template
 
-    def _get_relevant_clusters_for_rule(self, rule, clusters: dict[str, list[Signal]]) -> dict[str, list[Signal]]:
-        """Get clusters relevant for a rule based on rule's signal dependencies."""
-        relevant = {}
-        rule_id_lower = rule.id.lower()
+    def _check_instance_limits(self, instance_counts: dict[str, set]) -> None:
+        """Check if any category exceeds instance limit.
 
-        # Determine which signal types this rule cares about
-        if "snmp" in rule_id_lower:
-            # SNMP rules need snmp_security cluster
-            if "snmp_security" in clusters:
-                relevant["snmp_security"] = clusters["snmp_security"]
-        elif "vty" in rule_id_lower or "mgmt" in rule_id_lower:
-            # VTY/mgmt rules need vty clusters
-            for key, sigs in clusters.items():
-                if key.startswith("vty_"):
-                    relevant[key] = sigs
-        elif "interface" in rule_id_lower:
-            # Interface rules need interface clusters
-            for key, sigs in clusters.items():
-                if key.startswith("interface_"):
-                    relevant[key] = sigs
-        elif "auth" in rule_id_lower or "aaa" in rule_id_lower:
-            # Auth rules need global_auth cluster
-            if "global_auth" in clusters:
-                relevant["global_auth"] = clusters["global_auth"]
-        elif "http" in rule_id_lower or "web" in rule_id_lower:
-            # HTTP rules need global_services cluster
-            if "global_services" in clusters:
-                relevant["global_services"] = clusters["global_services"]
-        elif "syslog" in rule_id_lower or "logging" in rule_id_lower:
-            if "global_logging" in clusters:
-                relevant["global_logging"] = clusters["global_logging"]
-        elif "ntp" in rule_id_lower or "time" in rule_id_lower:
-            if "global_time" in clusters:
-                relevant["global_time"] = clusters["global_time"]
-        else:
-            # For rules that don't match specific categories, don't include any clusters
-            # This prevents false positive context assignment
-            pass
-
-        return relevant
+        Raises:
+            ContextOverflowError: If any category exceeds MAX_CONTEXT_INSTANCES_PER_NODE
+        """
+        for category, instances in instance_counts.items():
+            if len(instances) > MAX_CONTEXT_INSTANCES_PER_NODE:
+                raise ContextOverflowError(
+                    f"Context Avalanche Warning! Category '{category}' "
+                    f"exceeded maximum limit of {MAX_CONTEXT_INSTANCES_PER_NODE} instances. "
+                    f"Possible configuration error or injection attack."
+                )
 
     def _build_context(self, cluster_key: str, signals: list[Signal]) -> SignalContext:
-        """Build a single context from clustered signals."""
+        """Build a single context from clustered signals.
+
+        Parses cluster_key to extract context_type and instance_id:
+        - "management_plane" → context_type="management_plane", instance_id=None
+        - "vty_0_4" → context_type="vty", instance_id="0_4"
+        - "interface_GigabitEthernet0_0" → context_type="interface", instance_id="GigabitEthernet0_0"
+        """
+        context_type, instance_id = self._parse_cluster_key(cluster_key)
+
         # Aggregate evidence values (use raw for pattern matching)
         evidence_values = [s.raw for s in signals]
 
@@ -174,19 +215,20 @@ class ContextBuilder:
         metadata = {
             "signal_count": len(signals),
             "signal_types": list({s.type for s in signals}),
+            "cluster_key": cluster_key,
         }
 
         # Add specific metadata based on context type
-        if cluster_key == "snmp_security":
+        if context_type == "snmp":
             metadata["community_count"] = len([s for s in signals if s.type == "snmp_community"])
             versions = [s.value for s in signals if s.type == "snmp_version"]
             if versions:
                 metadata["version"] = versions[0]
-        elif cluster_key.startswith("vty_"):
+        elif context_type == "vty":
             transports = [s.value for s in signals if s.type == "transport_input"]
             if transports:
                 metadata["transport"] = transports
-        elif cluster_key.startswith("interface_"):
+        elif context_type == "interface":
             states = [s.value for s in signals if s.type == "interface_state"]
             if states:
                 metadata["state"] = states[0]
@@ -195,12 +237,33 @@ class ContextBuilder:
                 metadata["description"] = descriptions[0]
 
         # Compute deterministic ID
-        context_id = SignalContext._compute_context_id(cluster_key, evidence_values)
+        context_id = SignalContext._compute_context_id(context_type, instance_id, evidence_values)
 
         return SignalContext(
             id=context_id,
-            context_key=cluster_key,
+            context_type=context_type,
+            instance_id=instance_id,
             signals=signals,
             aggregated_evidence=evidence_values,
             metadata=metadata,
         )
+
+    def _parse_cluster_key(self, cluster_key: str) -> tuple[str, Optional[str]]:
+        """Parse cluster key into context_type and instance_id.
+
+        Examples:
+            "management_plane" → ("management_plane", None)
+            "vty_0_4" → ("vty", "0_4")
+            "interface_GigabitEthernet0_0" → ("interface", "GigabitEthernet0_0")
+        """
+        # Check for known prefixes
+        known_prefixes = ["vty_", "interface_"]
+
+        for prefix in known_prefixes:
+            if cluster_key.startswith(prefix):
+                instance_id = cluster_key[len(prefix):]
+                context_type = prefix.rstrip("_")
+                return (context_type, instance_id)
+
+        # Singleton or unknown - no instance_id
+        return (cluster_key, None)

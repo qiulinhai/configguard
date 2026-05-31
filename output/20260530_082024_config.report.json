@@ -1,0 +1,17 @@
+{
+  "version": "0.1.0",
+  "summary": {
+    "total": 0,
+    "pass": 0,
+    "fail": 0,
+    "warnings": 0
+  },
+  "findings": [],
+  "metadata": {
+    "config_name": "config",
+    "device_type": "Cisco IOS",
+    "parser_version": "0.1.0",
+    "rules_version": "0.1.0",
+    "timestamp": "2026-05-30T00:20:24.882784+00:00"
+  }
+}

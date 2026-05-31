@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "summary": {
+    "total": 1,
+    "pass": 0,
+    "fail": 1,
+    "warnings": 0
+  },
+  "findings": [
+    {
+      "rule_id": "CISCO-SNMP-001",
+      "rule_name": "Disable SNMP v2c",
+      "category": "snmp-security",
+      "severity": "HIGH",
+      "status": "FAIL",
+      "evidence": "snmp-server community, snmp-server community public, snmp-server community private, snmp-server community community123",
+      "block_type": "global",
+      "block_name": "snmp_security",
+      "remediation": "Use SNMPv3 with authpriv. If SNMP v2c required, use strong community strings."
+    }
+  ],
+  "metadata": {
+    "config_name": "config",
+    "device_type": "Cisco IOS",
+    "parser_version": "0.1.0",
+    "rules_version": "0.1.0",
+    "timestamp": "2026-05-29T23:55:06.250914+00:00"
+  }
+}

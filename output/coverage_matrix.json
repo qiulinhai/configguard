@@ -1,0 +1,60 @@
+{
+  "timestamp": "2026-05-30",
+  "matrix": {
+    "CISCO-MGMT-001": {
+      "EDGE": [
+        "case_001_telnet_enabled",
+        "case_009_telnet_disabled",
+        "case_011_vty_insecure",
+        "case_016_vty_telnet_only"
+      ],
+      "FAIL": [
+        "case_001_telnet_enabled",
+        "case_011_vty_insecure",
+        "case_016_vty_telnet_only"
+      ],
+      "PASS": [
+        "case_009_telnet_disabled"
+      ]
+    },
+    "CISCO-SNMP-001": {
+      "FAIL": [
+        "case_002_snmp_v2c",
+        "case_005_context_aggregation",
+        "case_012_snmp_disabled"
+      ]
+    },
+    "CISCO-MGMT-002": {
+      "FAIL": [
+        "case_006_http_enabled"
+      ],
+      "PASS": [
+        "case_007_http_disabled"
+      ]
+    },
+    "CISCO-LOG-001": {
+      "PASS": [
+        "case_013_syslog_configured"
+      ]
+    },
+    "CISCO-TIME-001": {
+      "PASS": [
+        "case_014_ntp_configured"
+      ]
+    },
+    "CISCO-AUTH-001": {
+      "FAIL": [
+        "case_017_aaa_missing"
+      ]
+    },
+    "CISCO-IF-001": {
+      "FAIL": [
+        "case_019_interface_no_shutdown"
+      ]
+    },
+    "CISCO-AUTH-001b": {},
+    "CISCO-AUTH-002": {},
+    "CISCO-LOG-002": {},
+    "CISCO-MGMT-003": {}
+  }
+}

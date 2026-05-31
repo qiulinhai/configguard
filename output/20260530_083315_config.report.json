@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0",
+  "summary": {
+    "total": 2,
+    "pass": 1,
+    "fail": 1,
+    "warnings": 0
+  },
+  "findings": [
+    {
+      "rule_id": "CISCO-IF-001",
+      "rule_name": "Unused Interfaces Must Be Shutdown",
+      "category": "interface-hygiene",
+      "severity": "MEDIUM",
+      "status": "FAIL",
+      "evidence": "no shutdown, ",
+      "block_type": "global",
+      "block_name": "interface_GigabitEthernet0_2",
+      "remediation": "Configure 'shutdown' on unused interfaces."
+    },
+    {
+      "rule_id": "CISCO-AUTH-001",
+      "rule_name": "AAA Required",
+      "category": "authentication",
+      "severity": "HIGH",
+      "status": "PASS",
+      "evidence": "aaa new-model",
+      "block_type": "global",
+      "block_name": "global_auth",
+      "remediation": "Configure 'aaa new-model' to enable AAA.\n"
+    }
+  ],
+  "metadata": {
+    "config_name": "config",
+    "device_type": "Cisco IOS",
+    "parser_version": "0.1.0",
+    "rules_version": "0.1.0",
+    "timestamp": "2026-05-30T00:33:15.755654+00:00"
+  }
+}

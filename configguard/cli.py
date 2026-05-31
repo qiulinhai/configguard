@@ -56,7 +56,12 @@ def audit(
             typer.echo(json.dumps(contexts_json, indent=2, default=str))
             typer.echo("--- END DEBUG ---\n")
 
-        findings = engine.evaluate_with_contexts(contexts, engine.rules)
+        # Fall back to legacy evaluation if rules don't have applies_to declarations
+        if not engine._category_index:
+            # No context-based rules loaded, use legacy evaluation
+            findings = engine.evaluate(ir)
+        else:
+            findings = engine.evaluate_with_contexts(contexts, engine.rules)
 
         # Build context-to-finding mapping and attach evidence summaries
         evidence_builder = EvidenceBuilder()

@@ -1,0 +1,62 @@
+{
+  "version": "0.1.0",
+  "summary": {
+    "total": 4,
+    "pass": 0,
+    "fail": 4,
+    "warnings": 0
+  },
+  "findings": [
+    {
+      "rule_id": "CISCO-MGMT-003",
+      "rule_name": "Secure VTY Configuration",
+      "category": "management-plane",
+      "severity": "HIGH",
+      "status": "FAIL",
+      "evidence": "transport input telnet",
+      "block_type": "global",
+      "block_name": "vty_0_4",
+      "remediation": "Configure 'transport input ssh' on all VTY lines."
+    },
+    {
+      "rule_id": "CISCO-MGMT-001",
+      "rule_name": "Disable Telnet",
+      "category": "management-plane",
+      "severity": "HIGH",
+      "status": "FAIL",
+      "evidence": "transport input telnet",
+      "block_type": "global",
+      "block_name": "vty_0_4",
+      "remediation": "Use 'transport input ssh' instead."
+    },
+    {
+      "rule_id": "CISCO-AUTH-001b",
+      "rule_name": "AAA Missing",
+      "category": "authentication",
+      "severity": "HIGH",
+      "status": "FAIL",
+      "evidence": "AAA_MISSING",
+      "block_type": "global",
+      "block_name": "global_auth",
+      "remediation": "Configure 'aaa new-model' to enable AAA."
+    },
+    {
+      "rule_id": "CISCO-SNMP-001",
+      "rule_name": "Disable SNMP v2c",
+      "category": "snmp-security",
+      "severity": "HIGH",
+      "status": "FAIL",
+      "evidence": "snmp-server community, snmp-server community public, snmp-server community private",
+      "block_type": "global",
+      "block_name": "snmp_security",
+      "remediation": "Use SNMPv3 with authpriv. If SNMP v2c required, use strong community strings."
+    }
+  ],
+  "metadata": {
+    "config_name": "config",
+    "device_type": "Cisco IOS",
+    "parser_version": "0.1.0",
+    "rules_version": "0.1.0",
+    "timestamp": "2026-05-30T02:04:57.181255+00:00"
+  }
+}
