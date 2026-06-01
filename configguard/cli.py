@@ -11,6 +11,7 @@ from configguard.engine import RuleEngine
 from configguard.evidence import EvidenceBuilder
 from configguard.risk import RiskEngine
 from configguard.registry import create_signal_registry_with_defaults
+from configguard.models import Severity
 from configguard.output.json import generate_json_report
 from configguard.output.markdown import generate_markdown_report
 
@@ -18,6 +19,19 @@ app = typer.Typer()
 
 # Initialize registry at module load time
 create_signal_registry_with_defaults()
+
+_FAIL_ON_SEVERITY_ORDER = {
+    "none": None,
+    "low": Severity.LOW,
+    "medium": Severity.MEDIUM,
+    "high": Severity.HIGH,
+}
+
+_SEVERITY_RANK = {
+    Severity.LOW: 1,
+    Severity.MEDIUM: 2,
+    Severity.HIGH: 3,
+}
 
 
 @app.command()
@@ -31,6 +45,7 @@ def audit(
     use_context: bool = typer.Option(True, help="Use context-based evaluation (per-context, aggregated evidence)"),
     debug_contexts: bool = typer.Option(False, help="Output SignalContext JSON for debugging (before evaluation)"),
     risk_score: bool = typer.Option(False, help="Include risk score calculation (v0.3)"),
+    fail_on: str = typer.Option("none", "--fail-on", help="Exit non-zero if any FAIL finding has severity >= threshold. One of: none, low, medium, high."),
 ):
     """Audit a network device configuration file."""
     if not config_file.exists():
@@ -127,6 +142,21 @@ def audit(
     warn = sum(1 for f in findings if f.status.value == "WARN")
     pass_count = sum(1 for f in findings if f.status.value == "PASS")
     typer.echo(f"\nTotal: {total} findings ({fail} failed, {warn} warnings, {pass_count} passed)")
+
+    # --fail-on gate
+    if fail_on not in _FAIL_ON_SEVERITY_ORDER:
+        typer.echo(f"Error: --fail-on must be one of: {list(_FAIL_ON_SEVERITY_ORDER.keys())}", err=True)
+        raise typer.Exit(2)
+    threshold = _FAIL_ON_SEVERITY_ORDER[fail_on]
+    if threshold is not None:
+        threshold_rank = _SEVERITY_RANK[threshold]
+        breach = [f for f in findings if f.status.value == "FAIL" and _SEVERITY_RANK.get(f.severity, 0) >= threshold_rank]
+        if breach:
+            typer.echo(
+                f"\n--fail-on {fail_on}: {len(breach)} finding(s) at or above {fail_on} severity. Exiting 1.",
+                err=True,
+            )
+            raise typer.Exit(1)
 
     # Risk score output (v0.3)
     if risk_score and risk_result:

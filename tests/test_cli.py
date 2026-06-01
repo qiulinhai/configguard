@@ -54,3 +54,44 @@ def test_cli_dual_path_evaluation(tmp_path):
     # Should detect telnet and SNMP
     assert "CISCO-MGMT-001" in result.output or "telnet" in result.output
     assert "CISCO-SNMP-001" in result.output or "snmp" in result.output
+
+
+def test_cli_fail_on_none_default_returns_zero(tmp_path):
+    """Default --fail-on none: HIGH findings still exit 0."""
+    from configguard.cli import app
+    from typer.testing import CliRunner
+    runner = CliRunner()
+    cfg = tmp_path / "config.txt"
+    cfg.write_text("line vty 0 4\n transport input telnet\n")
+    result = runner.invoke(app, [str(cfg), "--fail-on", "none"])
+    assert result.exit_code == 0
+
+
+def test_cli_fail_on_high_exits_one_on_high(tmp_path):
+    from configguard.cli import app
+    from typer.testing import CliRunner
+    runner = CliRunner()
+    cfg = tmp_path / "config.txt"
+    cfg.write_text("line vty 0 4\n transport input telnet\n")
+    result = runner.invoke(app, [str(cfg), "--fail-on", "high"])
+    assert result.exit_code == 1
+
+
+def test_cli_fail_on_high_exits_zero_on_clean(tmp_path):
+    from configguard.cli import app
+    from typer.testing import CliRunner
+    runner = CliRunner()
+    cfg = tmp_path / "config.txt"
+    cfg.write_text("hostname R1\n!\naaa new-model\n!\nend\n")
+    result = runner.invoke(app, [str(cfg), "--fail-on", "high"])
+    assert result.exit_code == 0
+
+
+def test_cli_fail_on_invalid_value_errors(tmp_path):
+    from configguard.cli import app
+    from typer.testing import CliRunner
+    runner = CliRunner()
+    cfg = tmp_path / "config.txt"
+    cfg.write_text("hostname R1\n")
+    result = runner.invoke(app, [str(cfg), "--fail-on", "bogus"])
+    assert result.exit_code != 0
