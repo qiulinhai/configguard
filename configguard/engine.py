@@ -15,6 +15,9 @@ from typing import Optional
 from configguard.models import ConfigIR, Finding, FindingStatus, Reference, Severity
 from configguard.context import SignalContext
 
+# v0.2.1+: Reference provenance
+KNOWN_REFERENCE_TYPES = frozenset({"cis-benchmark", "cve", "cisco-hardening-guide", "nist-800-53", "vendor-advisory"})
+
 
 class Rule:
     """A single security rule.
@@ -42,13 +45,12 @@ class Rule:
         self._domains = self.applies_to.get("security_domain", [])
 
         # v0.2.1+: Reference provenance
-        KNOWN_REF_TYPES = {"cis-benchmark", "cve", "cisco-hardening-guide", "nist-800-53", "vendor-advisory"}
         ref_dicts = rule_data.get("references", []) or []
         self.references: list[Reference] = []
         for r in ref_dicts:
             ref = Reference(type=r["type"], id=r["id"], url=r["url"])
-            if ref.type not in KNOWN_REF_TYPES:
-                print(f"Warning: Unknown reference type '{ref.type}' in rule {self.id} (allowed: {sorted(KNOWN_REF_TYPES)})")
+            if ref.type not in KNOWN_REFERENCE_TYPES:
+                print(f"Warning: Unknown reference type '{ref.type}' in rule {self.id} (allowed: {sorted(KNOWN_REFERENCE_TYPES)})")
             self.references.append(ref)
 
     def matches_category(self, category: str) -> bool:
