@@ -80,6 +80,7 @@ class Rule:
                         block_type=self._get_block_type_for_match(match, ir),
                         block_name=self._get_block_name_for_match(match, ir),
                         remediation=self.remediation,
+                        references=[ref.to_dict() for ref in self.references],
                     ))
         elif self.condition == "absent":
             matches = list(re.finditer(self.pattern, text_to_search))
@@ -94,6 +95,7 @@ class Rule:
                     block_type=None,
                     block_name=None,
                     remediation=self.remediation,
+                    references=[ref.to_dict() for ref in self.references],
                 ))
 
         return findings
@@ -150,6 +152,7 @@ class Rule:
                     block_type="global",
                     block_name=context.context_type,  # v0.2.1: use context_type
                     remediation=self.remediation,
+                    references=[ref.to_dict() for ref in self.references],
                 ))
         elif self.condition == "absent":
             if not re.search(self.pattern, evidence_text):
@@ -163,6 +166,7 @@ class Rule:
                     block_type="global",
                     block_name=context.context_type,  # v0.2.1: use context_type
                     remediation=self.remediation,
+                    references=[ref.to_dict() for ref in self.references],
                 ))
 
         return findings

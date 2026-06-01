@@ -2,7 +2,8 @@
 import yaml
 
 from configguard.engine import Rule
-from configguard.models import Reference, Severity
+from configguard.models import Finding, FindingStatus, Reference, Severity
+from configguard.output.markdown import generate_markdown_report
 
 
 def test_reference_dataclass_basic():
@@ -103,3 +104,24 @@ references:
            "Unknown reference type 'not-a-real-type'" in captured.err
     # Rule should still load
     assert len(rule.references) == 1
+
+
+def test_markdown_report_includes_references():
+    finding = Finding(
+        rule_id="CISCO-MGMT-001",
+        rule_name="Disable Telnet",
+        category="management-plane",
+        severity=Severity.HIGH,
+        status=FindingStatus.FAIL,
+        evidence="transport input telnet",
+        remediation="Use SSH",
+        references=[
+            {"type": "cis-benchmark", "id": "1.1.1", "url": "https://example.com/cis"},
+            {"type": "cve", "id": "CVE-1999-0001", "url": "https://nvd.nist.gov/vuln/detail/CVE-1999-0001"},
+        ],
+    )
+    md = generate_markdown_report([finding], config_name="test")
+    assert "**References:**" in md
+    assert "1.1.1" in md
+    assert "https://example.com/cis" in md
+    assert "CVE-1999-0001" in md

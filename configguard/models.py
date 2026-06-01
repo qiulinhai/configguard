@@ -34,6 +34,7 @@ class Finding(BaseModel):
     block_name: Optional[str] = None
     remediation: Optional[str] = None
     evidence_summary: Optional[dict] = None  # Human-readable evidence from EvidenceBuilder
+    references: list[dict] = Field(default_factory=list)  # List of Reference.to_dict()
 
 
 class Block(BaseModel):
