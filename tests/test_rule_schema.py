@@ -125,3 +125,21 @@ def test_markdown_report_includes_references():
     assert "1.1.1" in md
     assert "https://example.com/cis" in md
     assert "CVE-1999-0001" in md
+
+
+def test_markdown_report_no_references_block_when_empty():
+    finding = Finding(
+        rule_id="CISCO-MGMT-001",
+        rule_name="Disable Telnet",
+        category="management-plane",
+        severity=Severity.HIGH,
+        status=FindingStatus.FAIL,
+        evidence="transport input telnet",
+        remediation="Use SSH",
+        # No references key — should default to []
+    )
+    md = generate_markdown_report([finding], config_name="test")
+    assert "**References:**" not in md
+    # The finding's other content is still there
+    assert "Disable Telnet" in md
+    assert "transport input telnet" in md
