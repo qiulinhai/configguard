@@ -1,8 +1,10 @@
 """Tests for rule schema extensions (v0.2.1+)."""
+import json as _json
 import yaml
 
 from configguard.engine import Rule
 from configguard.models import Finding, FindingStatus, Reference, Severity
+from configguard.output.json import generate_json_report
 from configguard.output.markdown import generate_markdown_report
 
 
@@ -143,3 +145,40 @@ def test_markdown_report_no_references_block_when_empty():
     # The finding's other content is still there
     assert "Disable Telnet" in md
     assert "transport input telnet" in md
+
+
+def test_json_report_includes_references():
+    finding = Finding(
+        rule_id="CISCO-SNMP-001",
+        rule_name="Disable SNMP v2c",
+        category="snmp-security",
+        severity=Severity.HIGH,
+        status=FindingStatus.FAIL,
+        evidence="snmp-server community public RO",
+        remediation="Use SNMPv3",
+        references=[
+            {"type": "cis-benchmark", "id": "2.2.1", "url": "https://example.com/cis"},
+            {"type": "cve", "id": "CVE-1999-0517", "url": "https://nvd.nist.gov/vuln/detail/CVE-1999-0517"},
+        ],
+    )
+    raw = generate_json_report([finding], config_name="test", rules_version="0.2.1")
+    report = _json.loads(raw)
+    assert report["findings"][0]["references"] == [
+        {"type": "cis-benchmark", "id": "2.2.1", "url": "https://example.com/cis"},
+        {"type": "cve", "id": "CVE-1999-0517", "url": "https://nvd.nist.gov/vuln/detail/CVE-1999-0517"},
+    ]
+
+
+def test_json_report_empty_references_default():
+    finding = Finding(
+        rule_id="CISCO-MGMT-001",
+        rule_name="Disable Telnet",
+        category="management-plane",
+        severity=Severity.HIGH,
+        status=FindingStatus.FAIL,
+        evidence="transport input telnet",
+        remediation="Use SSH",
+    )
+    raw = generate_json_report([finding], config_name="test", rules_version="0.2.1")
+    report = _json.loads(raw)
+    assert report["findings"][0]["references"] == []
