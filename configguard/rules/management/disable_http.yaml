@@ -22,3 +22,11 @@ description: >
 
 remediation: >
   Use 'no ip http server' to disable and use SSH for management.
+
+references:
+  - type: cis-benchmark
+    id: "2.2.1"
+    url: "https://www.cisecurity.org/benchmark/cisco_ios"
+  - type: cisco-hardening-guide
+    id: "Disabling the HTTP Server"
+    url: "https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/sec-mgmt/sec-mgmt-book/sec-cfg-sec.html"

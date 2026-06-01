@@ -22,3 +22,11 @@ description: >
 
 remediation: >
   Configure 'transport input ssh' on all VTY lines.
+
+references:
+  - type: cis-benchmark
+    id: "2.3.2"
+    url: "https://www.cisecurity.org/benchmark/cisco_ios"
+  - type: cisco-hardening-guide
+    id: "VTY Line Security"
+    url: "https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/security/a1/sec-a1-cr-book/sec-cr-i1.html"

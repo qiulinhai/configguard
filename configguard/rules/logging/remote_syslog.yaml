@@ -15,3 +15,14 @@ finding:
 
 description: >
   Remote syslog must be configured for audit trail.
+
+references:
+  - type: cis-benchmark
+    id: "4.1.1"
+    url: "https://www.cisecurity.org/benchmark/cisco_ios"
+  - type: nist-800-53
+    id: "AU-2"
+    url: "https://csrc.nist.gov/Projects/risk-management/sp800-53-controls/release-search"
+  - type: cisco-hardening-guide
+    id: "Logging Configuration"
+    url: "https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/security/a1/sec-a1-cr-book/sec-cr-i1.html"

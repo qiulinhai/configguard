@@ -18,3 +18,11 @@ description: >
 
 remediation: >
   Configure 'login authentication' under line con 0.
+
+references:
+  - type: cis-benchmark
+    id: "1.2.1"
+    url: "https://www.cisecurity.org/benchmark/cisco_ios"
+  - type: cisco-hardening-guide
+    id: "Console Line Security"
+    url: "https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/security/a1/sec-a1-cr-book/sec-cr-i1.html"
