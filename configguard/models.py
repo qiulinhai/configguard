@@ -92,3 +92,14 @@ class CanonicalResource:
             self.relationships = []
         if self.tags is None:
             self.tags = []
+
+
+@dataclass
+class Reference:
+    """A single provenance reference for a rule (CIS, CVE, vendor doc, etc.)."""
+    type: str  # e.g., "cis-benchmark", "cve", "cisco-hardening-guide", "nist-800-53"
+    id: str    # source-specific identifier, e.g., "1.1.1" or "CVE-2017-6736"
+    url: str   # direct URL to the referenced material
+
+    def to_dict(self) -> dict:
+        return {"type": self.type, "id": self.id, "url": self.url}
