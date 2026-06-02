@@ -650,42 +650,54 @@ Field stability:
 
 ### 8.3 Markdown report
 
-Designed to be pasted into a PR description, a Confluence page, or an email. Contains the same findings plus full descriptions, remediation steps, and CIS references.
+Designed to be pasted into a PR description, a Confluence page, or an email. Contains the same findings plus full descriptions, remediation steps, and CIS references. Leads with a Compliance Assessment block so reviewers see the headline before the details.
 
 Layout:
 
 ```markdown
-# ConfigGuard Audit Report
+# ConfigGuard Security Audit Report
 
-**Config:** router
-**Generated:** 2026-06-02 14:30:22
-**Tool:** configguard v0.1.0
+## Compliance Assessment
 
-## Summary
+**Overall Status:** ❌ NON-COMPLIANT
 
-| Status | Count |
-| --- | --- |
-| ❌ FAIL | 3 |
-| ⚠️ WARN | 0 |
-| ✅ PASS | 0 |
+**Compliance Score:** 78/100 (HIGH)
 
-## Findings
-
-### ❌ CISCO-MGMT-001 — Disable Telnet
-
-- **Severity:** HIGH
-- **Category:** management-plane
-- **Block:** `line.vty.0`
-- **Evidence:** VTY line 0: transport input contains 'telnet'
-- **References:** CIS Benchmark 2.3.1, ...
-
-**Description:** Telnet transmits credentials in plaintext...
-
-**Remediation:** Replace `transport input telnet` with `transport input ssh`...
+**Risk Areas:**
+  - management-plane
+  - snmp-security
 
 ---
 
-### (more findings) ...
+## Summary
+
+- **Total Checks:** 3
+- **Passed:** 0
+- **Failed:** 3
+- **Warnings:** 0
+
+---
+
+## Failed Findings
+
+### [HIGH] CISCO-MGMT-001 — Disable Telnet
+
+**Rule ID:** CISCO-MGMT-001
+**Category:** management-plane
+
+**Evidence:**
+```
+VTY line 0: transport input contains 'telnet'
+```
+
+**Remediation:** Replace `transport input telnet` with `transport input ssh`...
+
+**References:**
+- [CIS Benchmark 2.3.1](https://www.cisecurity.org/benchmark/cisco_ios)
+
+## Passed Findings
+
+- [HIGH] CISCO-AUTH-001 — AAA Required (CISCO-AUTH-001)
 ```
 
 The Markdown is generated from the same data as the JSON, so the two are always consistent.

@@ -1,8 +1,13 @@
 """Markdown report generator for ConfigGuard."""
 from configguard.models import Finding
+from configguard.risk.engine import RiskEngineResult
 
 
-def generate_markdown_report(findings: list[Finding], config_name: str) -> str:
+def generate_markdown_report(
+    findings: list[Finding],
+    config_name: str,
+    risk_result: RiskEngineResult | None = None,
+) -> str:
     summary = {
         "total": len(findings),
         "pass": sum(1 for f in findings if f.status.value == "PASS"),
@@ -13,6 +18,29 @@ def generate_markdown_report(findings: list[Finding], config_name: str) -> str:
     lines = [
         "# ConfigGuard Security Audit Report",
         "",
+    ]
+
+    if risk_result is not None:
+        rs = risk_result.risk_score
+        overall_status = "NON-COMPLIANT" if summary["fail"] > 0 else "COMPLIANT"
+        status_icon = "❌" if overall_status == "NON-COMPLIANT" else "✅"
+        sorted_cats = sorted(rs.category_breakdown.items(), key=lambda x: -x[1])
+        risk_areas_lines = "\n".join(f"  - {cat}" for cat, _ in sorted_cats[:5]) or "  - (none)"
+
+        lines.extend([
+            "## Compliance Assessment",
+            "",
+            f"**Overall Status:** {status_icon} {overall_status}",
+            "",
+            f"**Compliance Score:** {rs.score}/100 ({rs.level.value})",
+            "",
+            f"**Risk Areas:**\n{risk_areas_lines}",
+            "",
+            "---",
+            "",
+        ])
+
+    lines.extend([
         "## Summary",
         f"- **Total Checks:** {summary['total']}",
         f"- **Passed:** {summary['pass']}",
@@ -21,7 +49,7 @@ def generate_markdown_report(findings: list[Finding], config_name: str) -> str:
         "",
         "---",
         "",
-    ]
+    ])
 
     fail_findings = [f for f in findings if f.status.value == "FAIL"]
     pass_findings = [f for f in findings if f.status.value == "PASS"]

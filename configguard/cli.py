@@ -124,7 +124,11 @@ def audit(
         typer.echo(f"JSON report: {json_path}")
 
     if format in ("markdown", "all"):
-        md_report = generate_markdown_report(findings=findings, config_name=config_name)
+        md_report = generate_markdown_report(
+            findings=findings,
+            config_name=config_name,
+            risk_result=risk_result,
+        )
         md_path = output_dir / f"{report_prefix}.report.md"
         md_path.write_text(md_report)
         typer.echo(f"Markdown report: {md_path}")

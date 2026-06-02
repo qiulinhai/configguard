@@ -40,6 +40,55 @@ def test_markdown_report_structure():
     assert "[HIGH] Disable Telnet" in report
 
 
+# ---------- Markdown report: compliance block ----------
+
+def test_markdown_report_without_risk_result_omits_compliance_block():
+    """Backward-compat: no risk_result means no compliance block."""
+    report = generate_markdown_report(FINDINGS, "test_config.txt")
+    assert "## Compliance Assessment" not in report
+
+def test_markdown_report_with_risk_result_includes_compliance_block():
+    risk = _synthetic_risk_result(FINDINGS)
+    report = generate_markdown_report(FINDINGS, "test_config.txt", risk_result=risk)
+    assert "## Compliance Assessment" in report
+    assert "Overall Status:" in report
+    assert "Compliance Score:" in report
+    assert "Risk Areas:" in report
+
+def test_markdown_report_compliance_status_uses_icon_for_failures():
+    risk = _synthetic_risk_result(FINDINGS)  # 1 FAIL
+    report = generate_markdown_report(FINDINGS, "test_config.txt", risk_result=risk)
+    assert "NON-COMPLIANT" in report
+    assert "❌" in report
+
+def test_markdown_report_compliance_status_uses_icon_for_clean():
+    pass_finding = Finding(
+        rule_id="CISCO-AUTH-001",
+        rule_name="AAA Required",
+        category="authentication",
+        severity=Severity.HIGH,
+        status=FindingStatus.PASS,
+        evidence="aaa new-model configured",
+    )
+    risk = _synthetic_risk_result([pass_finding])
+    report = generate_markdown_report([pass_finding], "clean.txt", risk_result=risk)
+    assert "COMPLIANT" in report
+    assert "✅" in report
+
+def test_markdown_report_compliance_block_appears_before_summary():
+    """The compliance summary is the headline — it must come before the raw counts."""
+    risk = _synthetic_risk_result(FINDINGS)
+    report = generate_markdown_report(FINDINGS, "test_config.txt", risk_result=risk)
+    compliance_idx = report.index("## Compliance Assessment")
+    summary_idx = report.index("## Summary")
+    assert compliance_idx < summary_idx
+
+def test_markdown_report_compliance_score_uses_over_100_format():
+    risk = _synthetic_risk_result(FINDINGS)
+    report = generate_markdown_report(FINDINGS, "test_config.txt", risk_result=risk)
+    assert "/100" in report
+
+
 # ---------- JSON report: compliance block ----------
 
 def _synthetic_risk_result(findings):
