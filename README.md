@@ -1,10 +1,28 @@
 # ConfigGuard
 
-**Static analysis for network device configurations, CIS-aligned.** Catch hardcoded credentials, plaintext protocols, missing access controls, and other CIS Benchmark violations — before they ship.
+**Network Configuration Compliance Platform.**
 
-A static analyzer for network device configurations audited against the [CIS Benchmark](https://www.cisecurity.org/benchmark/cisco_ios) — offline, deterministic, CI-native. **Starting with Cisco IOS, expanding to multi-vendor.**
+Continuously assess network device configurations against CIS Benchmarks, security baselines, and operational policies. ConfigGuard transforms raw network configurations into structured, audit-ready compliance data:
 
-ConfigGuard is a CLI tool that audits network device configuration files against the CIS Benchmark, starting with Cisco IOS. It works entirely offline on a config file: no device access, no probe timing, no false positives from unreachable services.
+```
+   Cisco Config
+         │
+         ▼
+
+   Compliance Assessment
+
+         │
+
+         ├── Security Findings
+         ├── Risk Score
+         ├── Audit Evidence
+         ├── Compliance Status
+         └── Remediation Guidance
+```
+
+**Starting with Cisco IOS. Built for multi-vendor network compliance.**
+
+ConfigGuard is a CLI tool that ingests a config file and produces a compliance report — no device access, no probe timing, no false positives from unreachable services. It runs entirely offline on a text file.
 
 ## See it run
 
