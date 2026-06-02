@@ -47,6 +47,57 @@ Total: 2 findings (2 failed, 0 warnings, 0 passed)
 
 The example config intentionally mixes violations and compliant sections so the tool's discrimination is visible.
 
+## Risk Score
+
+Pass `--risk-score` to get a 0–100 weighted compliance score and a level classification alongside the findings. The score rolls up severity, finding count, and category coverage into a single number you can track over time or roll up across a fleet.
+
+```bash
+$ configguard audit router.conf --risk-score
+```
+
+```
+[FAIL] CISCO-MGMT-001 Disable Telnet
+       Severity: HIGH
+       ...
+[FAIL] CISCO-MGMT-002 Disable HTTP Server
+       Severity: HIGH
+       ...
+[FAIL] CISCO-SNMP-001 Disable SNMP v2c
+       Severity: HIGH
+       ...
+[FAIL] CISCO-AUTH-001 AAA Required
+       Severity: HIGH
+       ...
+[FAIL] CISCO-MGMT-003 Secure VTY Configuration
+       Severity: HIGH
+       ...
+[FAIL] CISCO-IF-001 Unused Interfaces Must Be Shutdown
+       Severity: MEDIUM
+       ...
+
+Total: 6 findings (6 failed, 0 warnings, 0 passed)
+
+--- Risk Assessment (v0.3) ---
+Risk Score: 100/100 (CRITICAL)
+Contexts Covered: 5
+Severity Breakdown: {'HIGH': 50, 'MEDIUM': 5}
+Category Breakdown: {'management-plane': 45, 'interface-hygiene': 5, 'authentication': 13, 'snmp-security': 12}
+```
+
+Score → level mapping:
+
+| Score | Level |
+| --- | --- |
+| 0 | NONE |
+| 1–29 | LOW |
+| 30–59 | MEDIUM |
+| 60–89 | HIGH |
+| 90–100 | CRITICAL |
+
+A clean config scores **0 / 100 (NONE)**. A config with several HIGH findings scores in the **90–100 (CRITICAL)** range. Mid-range scores come from multiple MEDIUM findings or partial context coverage — useful for tracking progress as a fleet moves from "mostly broken" toward "mostly clean."
+
+The score is also available in the JSON report (under `risk_assessment`) for dashboards and trend tracking.
+
 ## Why ConfigGuard
 
 - **No network access.** Runs on a config file — safe for backups, git history, or any text you have on disk.
