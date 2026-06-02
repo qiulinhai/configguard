@@ -1,5 +1,7 @@
 # ConfigGuard
 
+[![CI](https://github.com/qiulinhai/configguard/actions/workflows/ci.yml/badge.svg)](https://github.com/qiulinhai/configguard/actions/workflows/ci.yml)
+
 **Network Configuration Compliance Platform.**
 
 Continuously assess network device configurations against CIS Benchmarks, security baselines, and operational policies. ConfigGuard transforms raw network configurations into structured, audit-ready compliance data:
