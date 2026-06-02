@@ -70,6 +70,8 @@ configguard audit router.conf --format markdown
 configguard audit router.conf --fail-on high
 ```
 
+For a complete walkthrough — every flag, every output format, CI recipes, custom rule packs, troubleshooting — see the **[User Guide](docs/user-guide.md)**.
+
 Run `--help` for the full option list, including `--explain` (LLM-augmented remediation hints) and `--risk-score` (v0.3 weighted risk scoring).
 
 ## Rules
