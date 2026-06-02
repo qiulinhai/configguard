@@ -2,9 +2,15 @@
 import json
 from datetime import datetime, timezone
 from configguard.models import Finding
+from configguard.risk.engine import RiskEngineResult
 
 
-def generate_json_report(findings: list[Finding], config_name: str, rules_version: str) -> str:
+def generate_json_report(
+    findings: list[Finding],
+    config_name: str,
+    rules_version: str,
+    risk_result: RiskEngineResult | None = None,
+) -> str:
     summary = {
         "total": len(findings),
         "pass": sum(1 for f in findings if f.status.value == "PASS"),
@@ -12,7 +18,7 @@ def generate_json_report(findings: list[Finding], config_name: str, rules_versio
         "warnings": sum(1 for f in findings if f.status.value == "WARN"),
     }
 
-    report = {
+    report: dict = {
         "version": "0.1.0",
         "summary": summary,
         "findings": [
@@ -38,5 +44,28 @@ def generate_json_report(findings: list[Finding], config_name: str, rules_versio
             "timestamp": datetime.now(timezone.utc).isoformat(),
         },
     }
+
+    if risk_result is not None:
+        rs = risk_result.risk_score
+        fail = summary["fail"]
+        overall_status = "NON-COMPLIANT" if fail > 0 else "COMPLIANT"
+
+        sorted_cats = sorted(rs.category_breakdown.items(), key=lambda x: -x[1])
+        risk_areas = [cat for cat, _ in sorted_cats]
+
+        report["compliance"] = {
+            "status": overall_status,
+            "score": rs.score,
+            "level": rs.level.value,
+            "risk_areas": risk_areas,
+        }
+        report["risk_assessment"] = {
+            "score": rs.score,
+            "level": rs.level.value,
+            "finding_count": rs.finding_count,
+            "severity_breakdown": rs.severity_breakdown,
+            "category_breakdown": rs.category_breakdown,
+            "context_coverage": rs.context_coverage,
+        }
 
     return json.dumps(report, indent=2)

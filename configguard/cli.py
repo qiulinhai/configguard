@@ -117,6 +117,7 @@ def audit(
             findings=findings,
             config_name=config_name,
             rules_version="0.1.0",
+            risk_result=risk_result,
         )
         json_path = output_dir / f"{report_prefix}.report.json"
         json_path.write_text(json_report)

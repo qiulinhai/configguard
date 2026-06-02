@@ -594,15 +594,26 @@ Top-level shape:
 
 ```json
 {
-  "tool": "configguard",
   "version": "0.1.0",
-  "config_name": "router",
-  "generated_at": "2026-06-02T14:30:22Z",
+  "compliance": {
+    "status": "NON-COMPLIANT",
+    "score": 78,
+    "level": "HIGH",
+    "risk_areas": ["management-plane", "snmp-security"]
+  },
+  "risk_assessment": {
+    "score": 78,
+    "level": "HIGH",
+    "finding_count": 3,
+    "severity_breakdown": { "HIGH": 3, "MEDIUM": 0, "LOW": 0 },
+    "category_breakdown": { "management-plane": 2, "snmp-security": 1 },
+    "context_coverage": 3
+  },
   "summary": {
     "total": 3,
-    "failed": 3,
-    "warnings": 0,
-    "passed": 0
+    "pass": 0,
+    "fail": 3,
+    "warnings": 0
   },
   "findings": [
     {
@@ -611,16 +622,22 @@ Top-level shape:
       "category": "management-plane",
       "severity": "HIGH",
       "status": "FAIL",
-      "block_name": "line.vty.0",
       "evidence": "VTY line 0: transport input contains 'telnet'",
-      "description": "...",
+      "block_type": "vty",
+      "block_name": "line.vty.0",
       "remediation": "...",
       "references": [
         { "type": "cis-benchmark", "id": "2.3.1", "url": "https://..." }
       ]
     }
   ],
-  "risk_assessment": null
+  "metadata": {
+    "config_name": "router",
+    "device_type": "Cisco IOS",
+    "parser_version": "0.1.0",
+    "rules_version": "0.1.0",
+    "timestamp": "2026-06-02T14:30:22+00:00"
+  }
 }
 ```
 
@@ -628,7 +645,8 @@ Field stability:
 
 - Top-level keys are stable across patch versions.
 - `findings[*]` keys are stable; new fields may be added in minor versions but existing ones will not change.
-- `risk_assessment` is `null` unless `--risk-score` was passed; the object shape is described in [Section 8.4](#84-risk-score-output).
+- `compliance` and `risk_assessment` are always populated. `compliance.status` is `COMPLIANT` when no findings have `status=FAIL`, otherwise `NON-COMPLIANT`. `risk_areas` is a list of category names, ordered by weighted impact (highest first).
+- `risk_assessment` is the detailed breakdown that powers the `compliance.score`; see [Section 8.4](#84-risk-score-output) for the math.
 
 ### 8.3 Markdown report
 
@@ -674,25 +692,43 @@ The Markdown is generated from the same data as the JSON, so the two are always 
 
 ### 8.4 Risk score output
 
-Enabled with `--risk-score`. The score is a weighted aggregate based on severity, finding count, and context coverage:
+Computed for every audit (the `--risk-score` flag is now a no-op kept for backward compatibility). The score is a weighted aggregate based on severity, finding count, and context coverage, and appears in three places:
+
+**1. STDOUT — the `=== Compliance Assessment ===` block:**
 
 ```
---- Risk Assessment (v0.3) ---
-Risk Score: 78/100 (HIGH)
-Contexts Covered: 3
-Severity Breakdown: { 'HIGH': 3, 'MEDIUM': 0, 'LOW': 0 }
-Category Breakdown: { 'management-plane': 2, 'snmp-security': 1 }
+=== Compliance Assessment ===
+
+Overall Status: NON-COMPLIANT
+
+Compliance Score: 78/100 (HIGH)
+
+Risk Areas:
+  - management-plane
+  - snmp-security
 ```
 
-In the JSON report, this populates the `risk_assessment` field:
+**2. JSON — the `compliance` block** (top-level summary, see [Section 8.2](#82-json-report) for the full schema):
+
+```json
+"compliance": {
+  "status": "NON-COMPLIANT",
+  "score": 78,
+  "level": "HIGH",
+  "risk_areas": ["management-plane", "snmp-security"]
+}
+```
+
+**3. JSON — the `risk_assessment` block** (detailed breakdown for dashboards and trend tracking):
 
 ```json
 "risk_assessment": {
   "score": 78,
   "level": "HIGH",
-  "context_coverage": 3,
+  "finding_count": 3,
   "severity_breakdown": { "HIGH": 3, "MEDIUM": 0, "LOW": 0 },
-  "category_breakdown": { "management-plane": 2, "snmp-security": 1 }
+  "category_breakdown": { "management-plane": 2, "snmp-security": 1 },
+  "context_coverage": 3
 }
 ```
 
