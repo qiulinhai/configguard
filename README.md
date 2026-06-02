@@ -170,7 +170,38 @@ The `--fail-on` flag accepts `none`, `low`, `medium`, `high`. The exit code is n
 
 - **Cisco IOS 12.x – 15.x** (classic IOS syntax) — current coverage
 
-**Roadmap:** IOS-XE, IOS-XR, NX-OS, Juniper Junos, Arista EOS. Multi-vendor support lands after the CIS Cisco IOS coverage is complete — adding a new vendor means a parser + rule set, not just toggles.
+Multi-vendor support (IOS-XE, SONiC, Juniper Junos, Arista EOS) is on the [roadmap](#roadmap). Adding a new vendor means a parser + rule set, not engine changes.
+
+## Roadmap
+
+### v0.2 — Deeper analysis
+- Weighted risk scoring across all findings (v0.3 prototype already shipped; v0.2 promotes it to default)
+- Compliance categories (CIS Authentication, CIS Management Plane, etc.) as first-class grouping for reports
+- Richer audit reports: control narrative, evidence trail, and remediation steps in a single document
+
+### v0.3 — Intelligent remediation
+- AI-assisted remediation guidance: turn each finding into a concrete, copy-pasteable config fix
+- Compliance trend tracking: store audit history, surface drift over time
+- Custom control packs: orgs can ship their own YAML control sets alongside the bundled CIS rules
+
+### v0.4 — Multi-vendor
+- **Cisco IOS-XE** — second parser, same engine, same rule format
+- **SONiC** — data-center switch fabric
+- **Juniper Junos** — service provider and enterprise routing
+
+### v0.5 — Fleet-scale
+- Compliance dashboard: aggregate risk score across an entire network
+- Fleet-wide assessment: run audits across many devices, normalized into a single report
+- Diff mode: compare two configs and show what changed in compliance terms
+
+### v1.0 — Network Compliance OS
+- A platform surface: API, web UI, integrations with the rest of the security stack (SIEM, ticketing, ITSM)
+- Compliance frameworks as first-class citizens: CIS, PCI-DSS, NIST 800-53, ISO 27001 — switchable per audit
+- Network Compliance OS: a runnable, configurable, observable system, not a CLI
+
+---
+
+The roadmap is directional. Dates, scope, and order will adjust based on what users actually need. If something here would unblock you, [open an issue](https://github.com/qiulinhai/configguard/issues/new) — issues drive the order.
 
 ## Limitations
 
