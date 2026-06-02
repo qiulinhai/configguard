@@ -56,6 +56,42 @@ The example config intentionally mixes violations and compliant sections so the 
 - **Block-aware parser.** Understands Cisco IOS configuration blocks (`interface`, `line vty`, `router`, `aaa`, `snmp-server`, `ip http`).
 - **Three output formats.** JSON for tooling, Markdown for humans, terminal for ad-hoc use.
 
+## How it works
+
+ConfigGuard's pipeline is what makes it a *compliance platform* rather than a regex linter. Each stage is composable and replaceable — multi-vendor support slots in at the Parser stage, not at the engine.
+
+```
+   Cisco IOS Config
+          │
+          ▼
+      Parser             Block-aware, deterministic
+          │
+          ▼
+      Signals            Typed facts (e.g. snmp_community="public")
+          │
+          ▼
+      Contexts           Block-keyed groupings
+          │
+          ▼
+      Compliance         YAML-defined controls,
+      Engine             weighted risk aggregation
+          │
+          ├──►  Security Findings
+          ├──►  Risk Score
+          ├──►  Audit Evidence
+          └──►  Reports (JSON + Markdown + STDOUT)
+```
+
+Each stage does one thing:
+
+- **Parser** — turns raw config text into a structured intermediate representation. Block-aware (recognizes `interface`, `line vty`, `router`, `aaa`, `snmp-server`, `ip http`).
+- **Signals** — typed facts extracted from blocks (e.g. `snmp_community="public"`, `http_server_enabled=true`). Signals are the atomic unit of compliance knowledge.
+- **Contexts** — block-keyed groupings of related signals. A `snmp` context contains all the community strings; an `http` context contains server state. This is what lets multiple rules evaluate the same evidence without duplicating logic.
+- **Compliance Engine** — evaluates YAML-defined controls against contexts and produces findings. The same engine that runs CIS rules today can run PCI-DSS or NIST 800-53 controls tomorrow with no engine changes — only new YAML.
+- **Outputs** — Findings (PASS / FAIL / WARN), a weighted Risk Score, the exact evidence (the config line that triggered the violation), and structured reports.
+
+The key idea: **add a new vendor by adding a parser, not by changing the engine.** That's what makes this scale beyond Cisco IOS without rewriting rules.
+
 ## Install
 
 ```bash
