@@ -46,10 +46,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/lhqiu/configguard"
-Repository = "https://github.com/lhqiu/configguard"
-Issues = "https://github.com/lhqiu/configguard/issues"
-Changelog = "https://github.com/lhqiu/configguard/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/qiulinhai/configguard"
+Repository = "https://github.com/qiulinhai/configguard"
+Issues = "https://github.com/qiulinhai/configguard/issues"
+Changelog = "https://github.com/qiulinhai/configguard/blob/main/CHANGELOG.md"
 
 [project.scripts]
 configguard = "configguard.cli:main"
