@@ -3,6 +3,10 @@ name: Unused Interfaces Must Be Shutdown
 category: interface-hygiene
 severity: MEDIUM
 
+applies_to:
+  category:
+    - interface
+
 match:
   type: regex
   pattern: "no shutdown"
