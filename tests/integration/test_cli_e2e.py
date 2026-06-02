@@ -266,12 +266,41 @@ class TestFlagToggles:
         assert block["count"] == len(block["contexts"])
 
     def test_risk_score_adds_risk_assessment_block(self, tmp_path):
+        """Compliance Assessment block appears in output (was: --risk-score opt-in, now always-on)."""
         cfg = _write_config(tmp_path, content=DIRTY_CONFIG)
         result = CliRunner().invoke(app, [str(cfg), "--risk-score"])
         assert result.exit_code == 0
-        assert "Risk Assessment" in result.output
-        assert "Risk Score:" in result.output
+        assert "=== Compliance Assessment ===" in result.output
+        assert "Compliance Score:" in result.output
         assert "/100" in result.output
+
+    def test_compliance_assessment_shown_by_default(self, tmp_path):
+        """Compliance block is now default (v0.2: promoted from --risk-score opt-in)."""
+        cfg = _write_config(tmp_path, content=DIRTY_CONFIG)
+        result = CliRunner().invoke(app, [str(cfg)])
+        assert result.exit_code == 0
+        assert "=== Compliance Assessment ===" in result.output
+        assert "Overall Status:" in result.output
+        assert "Compliance Score:" in result.output
+
+    def test_compliance_status_non_compliant_when_failures(self, tmp_path):
+        cfg = _write_config(tmp_path, content=DIRTY_CONFIG)
+        result = CliRunner().invoke(app, [str(cfg)])
+        assert "Overall Status: NON-COMPLIANT" in result.output
+
+    def test_compliance_status_compliant_when_clean(self, tmp_path):
+        cfg = _write_config(tmp_path, content=CLEAN_CONFIG)
+        result = CliRunner().invoke(app, [str(cfg)])
+        assert "Overall Status: COMPLIANT" in result.output
+
+    def test_compliance_block_lists_risk_areas(self, tmp_path):
+        """Risk Areas section derived from category breakdown, sorted by impact."""
+        cfg = _write_config(tmp_path, content=DIRTY_CONFIG)
+        result = CliRunner().invoke(app, [str(cfg)])
+        assert "Risk Areas:" in result.output
+        # DIRTY_CONFIG triggers snmp-security and management-plane; both should appear
+        assert "snmp-security" in result.output
+        assert "management-plane" in result.output
 
     def test_risk_score_with_no_fail_on_still_exits_0(self, tmp_path):
         cfg = _write_config(tmp_path, content=DIRTY_CONFIG)

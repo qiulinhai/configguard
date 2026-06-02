@@ -44,7 +44,7 @@ def audit(
     verbose: bool = typer.Option(False, help="Verbose output"),
     use_context: bool = typer.Option(True, help="Use context-based evaluation (per-context, aggregated evidence)"),
     debug_contexts: bool = typer.Option(False, help="Output SignalContext JSON for debugging (before evaluation)"),
-    risk_score: bool = typer.Option(False, help="Include risk score calculation (v0.3)"),
+    risk_score: bool = typer.Option(False, help="(Deprecated) Risk score is now always computed. Flag kept for backward compatibility."),
     fail_on: str = typer.Option("none", "--fail-on", help="Exit non-zero if any FAIL finding has severity >= threshold. One of: none, low, medium, high."),
 ):
     """Audit a network device configuration file."""
@@ -100,11 +100,10 @@ def audit(
         # Legacy per-signal evaluation
         findings = engine.evaluate(ir)
 
-    # Risk scoring (v0.3) - post-processing layer
-    risk_result = None
-    if risk_score:
-        risk_engine = RiskEngine()
-        risk_result = risk_engine.evaluate(findings)
+    # Risk scoring (v0.3) - now always-on (was opt-in via --risk-score, promoted to
+    # default in v0.2 to align CLI output with the 'compliance platform' framing).
+    # The --risk-score flag is kept for backward compatibility but is a no-op.
+    risk_result = RiskEngine().evaluate(findings)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     config_name = config_file.stem  # filename without extension
@@ -129,8 +128,29 @@ def audit(
         md_path.write_text(md_report)
         typer.echo(f"Markdown report: {md_path}")
 
+    total = len(findings)
+    fail = sum(1 for f in findings if f.status.value == "FAIL")
+    warn = sum(1 for f in findings if f.status.value == "WARN")
+    pass_count = sum(1 for f in findings if f.status.value == "PASS")
+
+    # === Compliance Assessment (v0.2: always shown, was opt-in via --risk-score) ===
+    # Headline summary so first-time users see "compliance platform" framing
+    # (per the README) rather than a bare list of failures.
+    rs = risk_result.risk_score
+    overall_status = "NON-COMPLIANT" if fail > 0 else "COMPLIANT"
+    typer.echo("\n=== Compliance Assessment ===\n")
+    typer.echo(f"Overall Status: {overall_status}\n")
+    typer.echo(f"Compliance Score: {rs.score}/100 ({rs.level.value})")
+    if rs.category_breakdown:
+        # Top categories by weighted impact, capped at 5 to keep the block readable
+        sorted_cats = sorted(rs.category_breakdown.items(), key=lambda x: -x[1])
+        typer.echo("\nRisk Areas:")
+        for cat, _weight in sorted_cats[:5]:
+            typer.echo(f"  - {cat}")
+    typer.echo()
+
     # STDOUT summary - derived from findings list, not re-counted
-    typer.echo("\n--- Audit Summary ---")
+    typer.echo("--- Audit Summary ---")
     for f in findings:
         status_icon = "FAIL" if f.status.value == "FAIL" else "PASS"
         typer.echo(f"[{status_icon}] {f.rule_id} {f.rule_name}")
@@ -144,10 +164,6 @@ def audit(
         else:
             typer.echo(f"       Evidence: {f.evidence}")
 
-    total = len(findings)
-    fail = sum(1 for f in findings if f.status.value == "FAIL")
-    warn = sum(1 for f in findings if f.status.value == "WARN")
-    pass_count = sum(1 for f in findings if f.status.value == "PASS")
     typer.echo(f"\nTotal: {total} findings ({fail} failed, {warn} warnings, {pass_count} passed)")
 
     # --fail-on gate
@@ -164,17 +180,6 @@ def audit(
                 err=True,
             )
             raise typer.Exit(1)
-
-    # Risk score output (v0.3)
-    if risk_score and risk_result:
-        rs = risk_result.risk_score
-        typer.echo("\n--- Risk Assessment (v0.3) ---")
-        typer.echo(f"Risk Score: {rs.score}/100 ({rs.level.value})")
-        typer.echo(f"Contexts Covered: {rs.context_coverage}")
-        if rs.severity_breakdown:
-            typer.echo(f"Severity Breakdown: {rs.severity_breakdown}")
-        if rs.category_breakdown:
-            typer.echo(f"Category Breakdown: {rs.category_breakdown}")
 
 
 def main():
