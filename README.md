@@ -1,8 +1,10 @@
 # ConfigGuard
 
-**Static analysis for Cisco IOS configs, CIS-aligned.** Catch hardcoded SNMP community strings, plaintext Telnet, missing AAA, and other CIS Benchmark violations — before they ship.
+**Static analysis for network device configurations, CIS-aligned.** Catch hardcoded credentials, plaintext protocols, missing access controls, and other CIS Benchmark violations — before they ship.
 
-ConfigGuard is a CLI tool that audits Cisco IOS configuration files against the [CIS Cisco IOS Benchmark](https://www.cisecurity.org/benchmark/cisco_ios). It works entirely offline on a config file: no device access, no probe timing, no false positives from unreachable services.
+A static analyzer for network device configurations audited against the [CIS Benchmark](https://www.cisecurity.org/benchmark/cisco_ios) — offline, deterministic, CI-native. **Starting with Cisco IOS, expanding to multi-vendor.**
+
+ConfigGuard is a CLI tool that audits network device configuration files against the CIS Benchmark, starting with Cisco IOS. It works entirely offline on a config file: no device access, no probe timing, no false positives from unreachable services.
 
 ## See it run
 
@@ -45,7 +47,7 @@ pip install configguard
 Or from a checkout:
 
 ```bash
-git clone https://github.com/lhqiu/configguard.git
+git clone https://github.com/qiulinhai/configguard.git
 cd configguard
 pip install -e .
 ```
@@ -110,9 +112,9 @@ The `--fail-on` flag accepts `none`, `low`, `medium`, `high`. The exit code is n
 
 ## Supported platforms
 
-- **Cisco IOS 12.x – 15.x** (classic IOS syntax)
+- **Cisco IOS 12.x – 15.x** (classic IOS syntax) — current coverage
 
-Not yet supported: IOS-XE, IOS-XR, NX-OS, Juniper Junos, Arista EOS. ConfigGuard is intentionally Cisco-first — adding multi-vendor support would dilute rule quality before the CIS coverage is complete.
+**Roadmap:** IOS-XE, IOS-XR, NX-OS, Juniper Junos, Arista EOS. Multi-vendor support lands after the CIS Cisco IOS coverage is complete — adding a new vendor means a parser + rule set, not just toggles.
 
 ## Limitations
 
