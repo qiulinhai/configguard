@@ -54,7 +54,14 @@ def audit(
 
     config_text = config_file.read_text()
     parser = CiscoIOSParser(config_text)
-    ir = parser.parse()
+    try:
+        ir = parser.parse()
+    except Exception as exc:
+        typer.echo(
+            f"Error: Failed to parse {config_file}: {exc}",
+            err=True,
+        )
+        raise typer.Exit(1)
 
     engine = RuleEngine(str(rules_dir))
 
