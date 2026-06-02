@@ -3,6 +3,10 @@ name: Unused Interfaces Must Be Shutdown
 category: interface-hygiene
 severity: MEDIUM
 
+applies_to:
+  category:
+    - interface
+
 match:
   type: regex
   pattern: "no shutdown"
@@ -18,3 +22,11 @@ description: >
 
 remediation: >
   Configure 'shutdown' on unused interfaces.
+
+references:
+  - type: cis-benchmark
+    id: "3.1.1"
+    url: "https://www.cisecurity.org/benchmark/cisco_ios"
+  - type: cisco-hardening-guide
+    id: "Interface Hardening"
+    url: "https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/security/a1/sec-a1-cr-book/sec-cr-i1.html"

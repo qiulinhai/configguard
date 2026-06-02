@@ -23,3 +23,11 @@ description: >
 
 remediation: >
   Use 'transport input ssh' instead.
+
+references:
+  - type: cis-benchmark
+    id: "2.3.1"
+    url: "https://www.cisecurity.org/benchmark/cisco_ios"
+  - type: cisco-hardening-guide
+    id: "Configuring Secure Shell"
+    url: "https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/security/a1/sec-a1-cr-book/sec-cr-i1.html"

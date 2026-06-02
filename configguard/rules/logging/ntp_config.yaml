@@ -15,3 +15,11 @@ finding:
 
 description: >
   NTP must be configured for time synchronization.
+
+references:
+  - type: cis-benchmark
+    id: "4.2.1"
+    url: "https://www.cisecurity.org/benchmark/cisco_ios"
+  - type: nist-800-53
+    id: "AU-8"
+    url: "https://csrc.nist.gov/Projects/risk-management/sp800-53-controls/release-search"

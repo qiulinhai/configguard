@@ -10,7 +10,14 @@
 
 **Spec reference:** `docs/superpowers/specs/2026-06-01-promotion-readme-step1-design.md`
 
-**Note on rule IDs:** The AAA family actually has 3 distinct IDs: `CISCO-AUTH-001` (required), `CISCO-AUTH-001b` (disabled), `CISCO-AUTH-002` (console auth). The spec's placeholder row is resolved at implementation as: `CISCO-AUTH-001` → AAA required, `CISCO-AUTH-001b` → AAA explicitly disabled, `CISCO-AUTH-002` → console authentication.
+**Note on rule IDs and rule count:** The repo actually has **10 rules** (not 7 as the spec originally said). AAA family has 3 IDs: `CISCO-AUTH-001` (required), `CISCO-AUTH-001b` (disabled), `CISCO-AUTH-002` (console auth). The full set:
+- management/: `CISCO-MGMT-001` (telnet), `CISCO-MGMT-002` (http), `CISCO-MGMT-003` (secure vty)
+- snmp/: `CISCO-SNMP-001` (snmp v2c disabled)
+- auth/: `CISCO-AUTH-001` (aaa required), `CISCO-AUTH-001b` (aaa disabled), `CISCO-AUTH-002` (console auth)
+- interface/: `CISCO-IF-001` (unused shutdown)
+- logging/: `CISCO-LOG-001` (remote syslog), `CISCO-LOG-002` (ntp)
+
+Task 5 populates references on all 10.
 
 ---
 
@@ -401,7 +408,7 @@ git commit -m "feat(output): include rule references in JSON report"
 
 ---
 
-## Task 5: Populate `references` on all 7 rules
+## Task 5: Populate `references` on all 10 rules
 
 **Files:**
 - Modify: `configguard/rules/management/disable_telnet.yaml`
@@ -411,6 +418,9 @@ git commit -m "feat(output): include rule references in JSON report"
 - Modify: `configguard/rules/auth/aaa_required.yaml`
 - Modify: `configguard/rules/auth/aaa_missing.yaml`
 - Modify: `configguard/rules/auth/console_auth.yaml`
+- Modify: `configguard/rules/interface/unused_shutdown.yaml`
+- Modify: `configguard/rules/logging/ntp_config.yaml`
+- Modify: `configguard/rules/logging/remote_syslog.yaml`
 
 - [ ] **Step 1: Add references to `disable_telnet.yaml`**
 
@@ -523,6 +533,54 @@ references:
     url: "https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/security/a1/sec-a1-cr-book/sec-cr-i1.html"
 ```
 
+- [ ] **Step 7a: Add references to `unused_shutdown.yaml` (CISCO-IF-001)**
+
+In `configguard/rules/interface/unused_shutdown.yaml`, after `remediation:`, add:
+
+```yaml
+
+references:
+  - type: cis-benchmark
+    id: "3.1.1"
+    url: "https://www.cisecurity.org/benchmark/cisco_ios"
+  - type: cisco-hardening-guide
+    id: "Interface Hardening"
+    url: "https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/security/a1/sec-a1-cr-book/sec-cr-i1.html"
+```
+
+- [ ] **Step 7b: Add references to `remote_syslog.yaml` (CISCO-LOG-001)**
+
+In `configguard/rules/logging/remote_syslog.yaml` (note: this rule has no `remediation:` block; add `references:` after `description:`), add:
+
+```yaml
+
+references:
+  - type: cis-benchmark
+    id: "4.1.1"
+    url: "https://www.cisecurity.org/benchmark/cisco_ios"
+  - type: nist-800-53
+    id: "AU-2"
+    url: "https://csrc.nist.gov/Projects/risk-management/sp800-53-controls/release-search"
+  - type: cisco-hardening-guide
+    id: "Logging Configuration"
+    url: "https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/security/a1/sec-a1-cr-book/sec-cr-i1.html"
+```
+
+- [ ] **Step 7c: Add references to `ntp_config.yaml` (CISCO-LOG-002)**
+
+In `configguard/rules/logging/ntp_config.yaml` (also no `remediation:` block; add `references:` after `description:`), add:
+
+```yaml
+
+references:
+  - type: cis-benchmark
+    id: "4.2.1"
+    url: "https://www.cisecurity.org/benchmark/cisco_ios"
+  - type: nist-800-53
+    id: "AU-8"
+    url: "https://csrc.nist.gov/Projects/risk-management/sp800-53-controls/release-search"
+```
+
 - [ ] **Step 8: Run rule schema tests + full suite**
 
 Run: `cd /home/lhqiu/project/ConfigGuard && pytest tests/ -q`
@@ -540,7 +598,7 @@ for r in e.rules:
     print(f'{r.id:25} refs={refs}')
 "
 ```
-Expected: All 7 rules printed, each with at least one reference like `cis-benchmark:2.3.1`
+Expected: All 10 rules printed, each with at least one reference like `cis-benchmark:2.3.1`
 
 - [ ] **Step 10: Commit**
 

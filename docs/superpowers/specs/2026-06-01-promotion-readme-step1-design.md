@@ -19,7 +19,7 @@ When a network/security engineer or compliance reader lands on the GitHub repo, 
 
 ## Architecture: what changes, what doesn't
 
-**Changes (12 files modified, 11 files created):**
+**Changes (12 files modified, 14 files created):**
 
 | File | Change |
 |---|---|
@@ -35,6 +35,9 @@ When a network/security engineer or compliance reader lands on the GitHub repo, 
 | `configguard/rules/auth/aaa_missing.yaml` | Add `references:` block. |
 | `configguard/rules/auth/aaa_required.yaml` | Add `references:` block. |
 | `configguard/rules/auth/console_auth.yaml` | Add `references:` block. |
+| `configguard/rules/interface/unused_shutdown.yaml` | Add `references:` block. |
+| `configguard/rules/logging/ntp_config.yaml` | Add `references:` block. |
+| `configguard/rules/logging/remote_syslog.yaml` | Add `references:` block. |
 | `README.md` | Full rewrite to layered structure (Section 3 below). |
 | `tests/cases/case_020_sample_router/` | New test case. |
 | `tests/test_rule_schema.py` | New tests for `references:` field (parse, model, unknown type warning, default empty). |
@@ -70,21 +73,26 @@ references:
 
 ### Per-rule references (planned; final values from CIS Cisco IOS Benchmark v15 / Cisco IOS XE hardening docs)
 
-| Rule ID | References |
-|---|---|
-| CISCO-MGMT-001 (Disable Telnet) | cis-benchmark 2.3.x; cisco-hardening-guide "Configuring Secure Shell" |
-| CISCO-MGMT-002 (Disable HTTP) | cis-benchmark 2.2.x; cisco-hardening-guide "HTTP server" |
-| CISCO-MGMT-003 (Secure VTY) | cis-benchmark 2.3.x; cisco-hardening-guide "VTY line security" |
-| CISCO-SNMP-001 (Disable SNMP v2c) | cis-benchmark 2.2.x; cve CVE-1999-0517 (community string class); cisco-hardening-guide "SNMPv3 migration" |
-| CISCO-AUTH-001b (Console auth required) | cis-benchmark 1.x; cisco-hardening-guide "Console line security" |
-| CISCO-AUTH-001 (AAA required) | cis-benchmark 1.x; nist-800-53 AC-2 |
-| (the third auth/ rule — verify ID at implementation) | (same AAA family) |
+There are **10 rules** in the repo (not 7 — corrected from earlier draft):
 
-Final IDs to be cross-checked against the actual CIS benchmark text at implementation time. The implementation step is allowed to update these mappings but must not drop references. Each of the 7 rules must have at least one CIS reference.
+| Rule ID | Rule | File | References (planned) |
+|---|---|---|---|
+| CISCO-MGMT-001 | Disable Telnet | management/disable_telnet.yaml | cis-benchmark 2.3.x; cisco-hardening-guide "Configuring Secure Shell" |
+| CISCO-MGMT-002 | Disable HTTP | management/disable_http.yaml | cis-benchmark 2.2.x; cisco-hardening-guide "HTTP server" |
+| CISCO-MGMT-003 | Secure VTY | management/secure_vty.yaml | cis-benchmark 2.3.x; cisco-hardening-guide "VTY line security" |
+| CISCO-SNMP-001 | Disable SNMP v2c | snmp/snmp_v2_disabled.yaml | cis-benchmark 2.2.x; cve CVE-1999-0517; cisco-hardening-guide "SNMPv3 migration" |
+| CISCO-AUTH-001 | AAA Required | auth/aaa_required.yaml | cis-benchmark 1.x; nist-800-53 AC-2 |
+| CISCO-AUTH-001b | AAA Disabled | auth/aaa_missing.yaml | cis-benchmark 1.x; nist-800-53 AC-2; cisco-hardening-guide "Enabling AAA" |
+| CISCO-AUTH-002 | Console Authentication | auth/console_auth.yaml | cis-benchmark 1.x; cisco-hardening-guide "Console line security" |
+| CISCO-IF-001 | Unused Interfaces Shutdown | interface/unused_shutdown.yaml | cis-benchmark 3.x; cisco-hardening-guide "Interface hardening" |
+| CISCO-LOG-001 | Remote Syslog Required | logging/remote_syslog.yaml | cis-benchmark 4.x; nist-800-53 AU-2; cisco-hardening-guide "Logging configuration" |
+| CISCO-LOG-002 | NTP Required | logging/ntp_config.yaml | cis-benchmark 4.x; nist-800-53 AU-8 (time stamps) |
+
+Final IDs to be cross-checked against the actual CIS benchmark text at implementation time. The implementation step is allowed to update these mappings but must not drop references. Each of the 10 rules must have at least one CIS reference.
 
 ### Backward compatibility
 
-`references:` is optional. The 7 existing rules pass the field as `[]` by default until populated. All existing test cases keep passing without modification.
+`references:` is optional. The 10 existing rules pass the field as `[]` by default until populated. All existing test cases keep passing without modification.
 
 ## Section 2: Demo sample config
 
@@ -192,7 +200,7 @@ CLI option:
 ## Sequencing (the agreed Approach A)
 
 1. Schema + loader + report rendering for `references:`
-2. Populate all 7 rules
+2. Populate all 10 rules
 3. `--fail-on` flag + tests
 4. `examples/sample_router.txt` + frozen fixtures
 5. `tools/generate_rule_table.py` + `docs/rule-table.md`

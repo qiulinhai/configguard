@@ -22,3 +22,14 @@ description: >
 
 remediation: >
   Use SNMPv3 with authpriv. If SNMP v2c required, use strong community strings.
+
+references:
+  - type: cis-benchmark
+    id: "2.2.2"
+    url: "https://www.cisecurity.org/benchmark/cisco_ios"
+  - type: cve
+    id: "CVE-1999-0517"
+    url: "https://nvd.nist.gov/vuln/detail/CVE-1999-0517"
+  - type: cisco-hardening-guide
+    id: "SNMPv3 Migration"
+    url: "https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/snmp/configuration/15-mt/snmp-15-mt-book.html"

@@ -26,6 +26,7 @@ def generate_json_report(findings: list[Finding], config_name: str, rules_versio
                 "block_type": f.block_type,
                 "block_name": f.block_name,
                 "remediation": f.remediation,
+                "references": f.references,
             }
             for f in findings
         ],

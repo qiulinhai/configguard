@@ -39,6 +39,21 @@ def generate_markdown_report(findings: list[Finding], config_name: str) -> str:
             if f.remediation:
                 lines.append(f"**Remediation:** {f.remediation}")
             lines.append("")
+            if f.references:
+                lines.append("**References:**")
+                for ref in f.references:
+                    ref_type = ref.get("type", "reference")
+                    ref_id = ref.get("id", "")
+                    ref_url = ref.get("url", "")
+                    if ref_type.upper() in ("CVE", "NIST-800-53"):
+                        label = f"{ref_type.upper()} {ref_id}" if ref_id else ref_type
+                    else:
+                        label = f"{ref_type.replace('-', ' ').title()} {ref_id}".strip()
+                    if ref_url:
+                        lines.append(f"- [{label}]({ref_url})")
+                    else:
+                        lines.append(f"- {label}")
+                lines.append("")
 
     if pass_findings:
         lines.append("## Passed Findings\n")

@@ -12,8 +12,11 @@ import yaml
 from pathlib import Path
 from typing import Optional
 
-from configguard.models import ConfigIR, Finding, FindingStatus, Severity
+from configguard.models import ConfigIR, Finding, FindingStatus, Reference, Severity
 from configguard.context import SignalContext
+
+# v0.2.1+: Reference provenance
+KNOWN_REFERENCE_TYPES = frozenset({"cis-benchmark", "cve", "cisco-hardening-guide", "nist-800-53", "vendor-advisory"})
 
 
 class Rule:
@@ -40,6 +43,15 @@ class Rule:
         self.applies_to = rule_data.get("applies_to", {})
         self._categories = self.applies_to.get("category", [])
         self._domains = self.applies_to.get("security_domain", [])
+
+        # v0.2.1+: Reference provenance
+        ref_dicts = rule_data.get("references", []) or []
+        self.references: list[Reference] = []
+        for r in ref_dicts:
+            ref = Reference(type=r["type"], id=r["id"], url=r["url"])
+            if ref.type not in KNOWN_REFERENCE_TYPES:
+                print(f"Warning: Unknown reference type '{ref.type}' in rule {self.id} (allowed: {sorted(KNOWN_REFERENCE_TYPES)})")
+            self.references.append(ref)
 
     def matches_category(self, category: str) -> bool:
         """Stage 1: Check if rule applies to this category."""
@@ -68,6 +80,7 @@ class Rule:
                         block_type=self._get_block_type_for_match(match, ir),
                         block_name=self._get_block_name_for_match(match, ir),
                         remediation=self.remediation,
+                        references=[ref.to_dict() for ref in self.references],
                     ))
         elif self.condition == "absent":
             matches = list(re.finditer(self.pattern, text_to_search))
@@ -82,6 +95,7 @@ class Rule:
                     block_type=None,
                     block_name=None,
                     remediation=self.remediation,
+                    references=[ref.to_dict() for ref in self.references],
                 ))
 
         return findings
@@ -138,6 +152,7 @@ class Rule:
                     block_type="global",
                     block_name=context.context_type,  # v0.2.1: use context_type
                     remediation=self.remediation,
+                    references=[ref.to_dict() for ref in self.references],
                 ))
         elif self.condition == "absent":
             if not re.search(self.pattern, evidence_text):
@@ -151,6 +166,7 @@ class Rule:
                     block_type="global",
                     block_name=context.context_type,  # v0.2.1: use context_type
                     remediation=self.remediation,
+                    references=[ref.to_dict() for ref in self.references],
                 ))
 
         return findings
