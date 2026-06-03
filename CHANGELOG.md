@@ -4,6 +4,8 @@ All notable changes to ConfigGuard are documented here. The format is based on [
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-03
+
 ### Added
 - **`configguard fleet audit <dir>`** — audit a directory of configs in one invocation
 - **Snapshot v1 contract** — self-contained, version-stamped canonical artifact (`fleet.snapshot.json`); Phase 2's `fleet diff` will read it
@@ -35,5 +37,6 @@ All notable changes to ConfigGuard are documented here. The format is based on [
 - **Maintainer release guide** ([docs/RELEASING.md](docs/RELEASING.md)) — PyPI trusted publisher setup and release tagging
 - **README** with product positioning, "How it works" pipeline diagram, roadmap, and worked examples
 
-[Unreleased]: https://github.com/qiulinhai/configguard/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/qiulinhai/configguard/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/qiulinhai/configguard/compare/v0.1.0...v0.5.0
 [0.1.0]: https://github.com/qiulinhai/configguard/releases/tag/v0.1.0

@@ -1,6 +1,6 @@
 [project]
 name = "configguard"
-version = "0.1.0"
+version = "0.5.0"
 description = "CIS-aligned Cisco IOS configuration auditor that runs in your CI"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10"
