@@ -236,6 +236,7 @@ def _f_to_dict(f) -> dict:
         "block_type": f.block_type,
         "block_name": f.block_name,
         "remediation": f.remediation,
+        "evidence_summary": f.evidence_summary,
         "references": f.references,
     }
 
@@ -253,6 +254,7 @@ def _f_from_dict(data: dict) -> "Finding":
         block_type=data.get("block_type"),
         block_name=data.get("block_name"),
         remediation=data.get("remediation"),
+        evidence_summary=data.get("evidence_summary"),
         references=data.get("references") or [],
     )
 

@@ -61,6 +61,53 @@ def test_snapshot_round_trip():
     assert restored.snapshot_version == 1
     assert restored.devices[0].device_name == "edge2"
     assert restored.summary.device_count == 1
+    # NEW: findings and severity_breakdown survive round-trip
+    assert len(restored.devices[0].findings) == 1
+    assert restored.devices[0].findings[0].rule_id == "CISCO-MGMT-002"
+    assert restored.devices[0].findings[0].severity == Severity.HIGH
+    assert restored.devices[0].findings[0].status == FindingStatus.FAIL
+    assert restored.devices[0].severity_breakdown == {"HIGH": 2, "MEDIUM": 1, "LOW": 0}
+
+
+def test_finding_evidence_summary_round_trips():
+    """evidence_summary (set by EvidenceBuilder) must survive Snapshot JSON I/O.
+
+    The CLI consumes this field for human-readable evidence display, so dropping
+    it on round-trip would silently degrade the human-facing report. Pin it.
+    """
+    finding = Finding(
+        rule_id="CISCO-MGMT-002",
+        rule_name="Disable HTTP Server",
+        category="management-plane",
+        severity=Severity.HIGH,
+        status=FindingStatus.FAIL,
+        evidence="HTTP server: enabled",
+        evidence_summary={"summary": "HTTP server is enabled on 1 of 1 device(s)"},
+    )
+    snap = Snapshot(
+        snapshot_version=1,
+        generator={"configguard_version": "0.5.0", "python_version": "3.12.4"},
+        generated_at="2026-06-02T14:30:22Z",
+        source={"config_dir": "./configs", "rules_dir": "./configguard/rules"},
+        summary=_sample_summary(),
+        devices=[
+            DeviceSnapshot(
+                device_name="edge2",
+                config_path="configs/edge2.conf",
+                config_hash="abc",
+                status="NON-COMPLIANT",
+                level="HIGH",
+                severity_breakdown={"HIGH": 1, "MEDIUM": 0, "LOW": 0},
+                findings=[finding],
+                error=None,
+            )
+        ],
+    )
+    data = snap.to_dict()
+    restored = Snapshot.from_dict(data)
+    assert restored.devices[0].findings[0].evidence_summary == {
+        "summary": "HTTP server is enabled on 1 of 1 device(s)"
+    }
 
 
 def test_snapshot_to_dict_has_v1_contract_shape():
