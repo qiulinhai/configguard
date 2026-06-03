@@ -2,6 +2,52 @@
 from pathlib import Path
 import pytest
 from configguard.fleet import discover_configs
+from configguard.services.audit_service import AuditResult
+from configguard.risk.engine import RiskEngine
+from configguard.risk.model import RiskScore, RiskEngineResult, RiskLevel
+
+
+def _make_audit_result(tmp_path, content, error=None):
+    """Helper: write a config and return a partially-populated AuditResult."""
+    cfg = tmp_path / "router.conf"
+    cfg.write_text(content)
+    if error:
+        return AuditResult(
+            config_name="router.conf",
+            config_path=str(cfg),
+            config_hash="",
+            error=error,
+        )
+    # Run real engine to populate risk_result
+    from configguard.parser import CiscoIOSParser
+    from configguard.engine import RuleEngine
+    from configguard.signals import SignalExtractor
+    from configguard.context import ContextBuilder
+    from configguard.evidence import EvidenceBuilder
+
+    ir = CiscoIOSParser(content).parse()
+    engine = RuleEngine("configguard/rules")
+    extractor = SignalExtractor()
+    signals = extractor.extract(ir)
+    builder = ContextBuilder()
+    contexts = builder.build_contexts(signals)
+    if engine._category_index:
+        findings = engine.evaluate_with_contexts(contexts, engine.rules)
+    else:
+        findings = engine.evaluate(ir)
+    eb = EvidenceBuilder()
+    ctx_by_key = {c.context_key: c for c in contexts}
+    for f in findings:
+        if f.block_name and f.block_name in ctx_by_key:
+            eb.attach_evidence_summary(f, ctx_by_key[f.block_name])
+    risk_result = RiskEngine().evaluate(findings)
+    return AuditResult(
+        config_name="router.conf",
+        config_path=str(cfg),
+        config_hash="abc",
+        findings=findings,
+        risk_result=risk_result,
+    )
 
 
 def test_discover_finds_matching_files_in_dir(tmp_path):
@@ -71,3 +117,78 @@ def test_discover_with_path_pointing_to_file_raises(tmp_path):
     file_path.write_text("x")
     with pytest.raises(NotADirectoryError):
         discover_configs(file_path, includes=["*.conf"])
+
+
+# ---- device_snapshot_from_audit (Task 5) ----
+
+from configguard.fleet import device_snapshot_from_audit
+
+
+def test_device_snapshot_from_audit_non_compliant(tmp_path):
+    content = "snmp-server community public RO\nip http server\nend\n"
+    ar = _make_audit_result(tmp_path, content)
+    ds = device_snapshot_from_audit(ar, config_dir=tmp_path)
+    assert ds.device_name == "router"
+    assert ds.status == "NON-COMPLIANT"
+    assert ds.level in {"LOW", "MEDIUM", "HIGH", "CRITICAL"}
+    assert ds.error is None
+    assert len(ds.findings) > 0
+    assert sum(ds.severity_breakdown.values()) == len(ds.findings)
+
+
+def test_device_snapshot_from_audit_error(tmp_path):
+    ar = AuditResult(
+        config_name="bad.conf",
+        config_path=str(tmp_path / "bad.conf"),
+        config_hash="",
+        error="Failed to parse: bad syntax",
+    )
+    ds = device_snapshot_from_audit(ar, config_dir=tmp_path)
+    assert ds.status == "ERROR"
+    assert ds.error is not None
+    assert ds.findings == []
+    assert ds.severity_breakdown == {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    assert ds.level == "LOW"  # default fill; UI should check status first
+
+
+def test_device_snapshot_from_audit_compliant(tmp_path):
+    content = """
+hostname R1
+!
+aaa new-model
+username admin privilege 15 secret 0 ChangeMe123!
+line vty 0 4
+ transport input ssh
+ login local
+!
+logging host 192.0.2.10
+ntp server 10.0.0.1
+end
+"""
+    ar = _make_audit_result(tmp_path, content)
+    ds = device_snapshot_from_audit(ar, config_dir=tmp_path)
+    assert ds.status == "COMPLIANT"
+    # No FAIL findings is the contract for COMPLIANT. (The current rule set
+    # only emits findings on FAIL conditions, so a fully clean config
+    # legitimately produces zero findings. "Rules ran" is implicitly
+    # covered — an errored audit would yield status=ERROR, not COMPLIANT.)
+    assert sum(1 for f in ds.findings if f.status.value == "FAIL") == 0
+
+
+def test_device_snapshot_config_path_is_relative_to_config_dir(tmp_path):
+    sub = tmp_path / "site-a"
+    sub.mkdir()
+    cfg = sub / "edge1.conf"
+    cfg.write_text("hostname E1\nend\n")
+    ar = AuditResult(
+        config_name=cfg.name,
+        config_path=str(cfg),
+        config_hash="abc",
+        findings=[],
+    )
+    ds = device_snapshot_from_audit(ar, config_dir=tmp_path)
+    # Path is relative to the parent config_dir. The audit_service writes
+    # the absolute path back, so device_snapshot_from_audit must relativize.
+    assert "edge1" in ds.config_path
+    assert Path(ds.config_path).is_absolute() is False
+
