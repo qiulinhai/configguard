@@ -129,6 +129,7 @@ def build_snapshot(
     rules_dir: Path,
     configguard_version: str,
     use_context: bool = True,
+    includes: Optional[list[str]] = None,
 ) -> Snapshot:
     """Discover configs in `config_dir`, audit each, build a Snapshot.
 
@@ -144,7 +145,7 @@ def build_snapshot(
     would require per-device isolation of the engine's mutable state.
     """
     config_dir = Path(config_dir)
-    config_paths = discover_configs(config_dir)
+    config_paths = discover_configs(config_dir, includes=includes)
 
     devices = []
     for cfg_path in config_paths:

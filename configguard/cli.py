@@ -208,6 +208,7 @@ def fleet_audit_cmd(
             rules_dir=rules_dir,
             configguard_version=__version__,
             use_context=use_context,
+            includes=include,
         )
     except FileNotFoundError as exc:
         typer.echo(f"Error: {exc}", err=True)
