@@ -17,6 +17,9 @@ from configguard.snapshot import DeviceSnapshot, VALID_LEVELS
 # Default globs matched in addition to user-supplied --include values.
 DEFAULT_INCLUDES = ("*.conf", "*.txt", "*.cfg")
 
+# Empty severity breakdown used as the zeroed default in the ERROR path.
+EMPTY_BREAKDOWN = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+
 
 def discover_configs(
     config_dir: Path,
@@ -78,20 +81,20 @@ def device_snapshot_from_audit(ar: AuditResult, config_dir: Path) -> DeviceSnaps
             config_hash=ar.config_hash,
             status="ERROR",
             level="LOW",  # default fill; dashboards must check `status` first
-            severity_breakdown={"HIGH": 0, "MEDIUM": 0, "LOW": 0},
+            severity_breakdown=EMPTY_BREAKDOWN,
             findings=[],
             error=ar.error,
         )
 
-    # Compute severity breakdown
-    breakdown = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    # Compute severity breakdown and check for any FAIL findings in one pass
+    breakdown = dict(EMPTY_BREAKDOWN)  # copy; we mutate it below
+    has_fail = False
     for f in ar.findings:
         sev = f.severity.value
         if sev in breakdown:
             breakdown[sev] += 1
-
-    # Determine status
-    has_fail = any(f.status.value == "FAIL" for f in ar.findings)
+        if f.status.value == "FAIL":
+            has_fail = True
     status = "NON-COMPLIANT" if has_fail else "COMPLIANT"
 
     # Determine level from risk_result

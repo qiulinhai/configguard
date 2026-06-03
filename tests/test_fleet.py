@@ -3,12 +3,16 @@ from pathlib import Path
 import pytest
 from configguard.fleet import discover_configs
 from configguard.services.audit_service import AuditResult
-from configguard.risk.engine import RiskEngine
-from configguard.risk.model import RiskScore, RiskEngineResult, RiskLevel
 
 
 def _make_audit_result(tmp_path, content, error=None):
-    """Helper: write a config and return a partially-populated AuditResult."""
+    """Helper: write a config and return a real AuditResult from run_audit().
+
+    Reuses audit_service.run_audit() so the test exercises the same
+    pipeline the CLI uses — no pipeline re-implementation here.
+    """
+    from configguard.services.audit_service import run_audit
+
     cfg = tmp_path / "router.conf"
     cfg.write_text(content)
     if error:
@@ -18,35 +22,10 @@ def _make_audit_result(tmp_path, content, error=None):
             config_hash="",
             error=error,
         )
-    # Run real engine to populate risk_result
-    from configguard.parser import CiscoIOSParser
-    from configguard.engine import RuleEngine
-    from configguard.signals import SignalExtractor
-    from configguard.context import ContextBuilder
-    from configguard.evidence import EvidenceBuilder
-
-    ir = CiscoIOSParser(content).parse()
-    engine = RuleEngine("configguard/rules")
-    extractor = SignalExtractor()
-    signals = extractor.extract(ir)
-    builder = ContextBuilder()
-    contexts = builder.build_contexts(signals)
-    if engine._category_index:
-        findings = engine.evaluate_with_contexts(contexts, engine.rules)
-    else:
-        findings = engine.evaluate(ir)
-    eb = EvidenceBuilder()
-    ctx_by_key = {c.context_key: c for c in contexts}
-    for f in findings:
-        if f.block_name and f.block_name in ctx_by_key:
-            eb.attach_evidence_summary(f, ctx_by_key[f.block_name])
-    risk_result = RiskEngine().evaluate(findings)
-    return AuditResult(
-        config_name="router.conf",
-        config_path=str(cfg),
-        config_hash="abc",
-        findings=findings,
-        risk_result=risk_result,
+    return run_audit(
+        config_path=cfg,
+        config_name=cfg.name,
+        rules_dir=Path("configguard/rules"),
     )
 
 
