@@ -181,6 +181,55 @@ For a complete walkthrough — every flag, every output format, CI recipes, cust
 
 Run `--help` for the full option list, including `--explain` (LLM-augmented remediation hints) and `--risk-score` (v0.3 weighted risk scoring).
 
+## Fleet mode
+
+For an entire network, point ConfigGuard at a directory of configs:
+
+```bash
+$ configguard fleet audit configs/
+
+Auditing 5 devices...
+[1/5] core1    COMPLIANT
+[2/5] core2    COMPLIANT
+[3/5] edge1    COMPLIANT
+[4/5] edge2    NON-COMPLIANT  (CRITICAL)
+[5/5] fw1      NON-COMPLIANT  (HIGH)
+
+=== Fleet Compliance Assessment ===
+
+Snapshot: output/fleet.snapshot.json
+
+Fleet Status: NON-COMPLIANT
+Devices: 5 audited (3 compliant, 2 non-compliant)
+Findings: 8 total (4 failed, 0 passed)
+High-risk devices: 2
+
+Worst offenders:
+  edge2   CRITICAL  3 high-risk finding(s)  (top: CISCO-MGMT-002)
+  fw1     HIGH      1 high-risk finding(s)  (top: CISCO-MGMT-001)
+
+Per-device reports (5):
+  output/devices/core1.report.json
+  output/devices/core2.report.json
+  output/devices/edge1.report.json
+  output/devices/edge2.report.json
+  output/devices/fw1.report.json
+```
+
+The audit produces two artifacts:
+
+- **`fleet.snapshot.json`** — the canonical, self-contained snapshot of the whole fleet. Per-device findings, config hashes, fleet summary, and generator metadata. Future `fleet diff` and `fleet report` will read this file.
+- **`devices/<name>.report.json`** — per-device drill-down reports. Same shape as the single-file `audit` JSON, one per device.
+
+For CI gating on the whole fleet:
+
+```bash
+configguard fleet audit configs/ --fail-on high
+# exit 1 if any device has a HIGH-severity finding
+```
+
+For richer examples and the Snapshot schema, see the [User Guide — Fleet audits](docs/user-guide.md#fleet-audits).
+
 ## Rules
 
 Ten rules across five security domains. Each rule's YAML declares its CIS Benchmark section, NIST 800-53 control, and (where applicable) CVE mapping.
