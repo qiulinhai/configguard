@@ -11,8 +11,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-from configguard.services.audit_service import AuditResult
-from configguard.snapshot import DeviceSnapshot, VALID_LEVELS
+from configguard.services.audit_service import AuditResult, run_audit
+from configguard.snapshot import (
+    DeviceSnapshot,
+    Snapshot,
+    FleetSummary,
+    VALID_LEVELS,
+    make_generator_metadata,
+    now_iso_utc,
+)
 
 # Default globs matched in addition to user-supplied --include values.
 DEFAULT_INCLUDES = ("*.conf", "*.txt", "*.cfg")
@@ -113,4 +120,55 @@ def device_snapshot_from_audit(ar: AuditResult, config_dir: Path) -> DeviceSnaps
         severity_breakdown=breakdown,
         findings=ar.findings,
         error=None,
+    )
+
+
+def build_snapshot(
+    config_dir: Path,
+    rules_dir: Path,
+    configguard_version: str,
+    use_context: bool = True,
+) -> Snapshot:
+    """Discover configs in `config_dir`, audit each, build a Snapshot.
+
+    Returns a fully-populated Snapshot. The caller is responsible for
+    writing it to disk and printing the assessment block.
+
+    Continues on per-device errors (parse failure, read failure, etc.):
+    partial success is preferred over atomic failure — a fleet with one
+    broken config should still report the rest.
+    """
+    config_dir = Path(config_dir)
+    config_paths = discover_configs(config_dir)
+
+    devices = []
+    for cfg_path in config_paths:
+        ar = run_audit(
+            config_path=cfg_path,
+            config_name=cfg_path.name,
+            rules_dir=rules_dir,
+            use_context=use_context,
+        )
+        ds = device_snapshot_from_audit(ar, config_dir=config_dir)
+        devices.append(ds)
+
+    summary = FleetSummary.from_devices(devices)
+
+    # Generator metadata: honor the caller's configguard_version when
+    # explicitly provided so the test (and any external caller) sees
+    # the version they asked for rather than the imported __version__.
+    generator = make_generator_metadata()
+    if configguard_version is not None:
+        generator["configguard_version"] = configguard_version
+
+    return Snapshot(
+        snapshot_version=1,
+        generator=generator,
+        generated_at=now_iso_utc(),
+        source={
+            "config_dir": str(config_dir),
+            "rules_dir": str(rules_dir),
+        },
+        summary=summary,
+        devices=devices,
     )

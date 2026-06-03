@@ -1,4 +1,5 @@
 """Unit tests for the fleet module."""
+import json
 from pathlib import Path
 import pytest
 from configguard.fleet import discover_configs
@@ -170,4 +171,121 @@ def test_device_snapshot_config_path_is_relative_to_config_dir(tmp_path):
     # the absolute path back, so device_snapshot_from_audit must relativize.
     assert "edge1" in ds.config_path
     assert Path(ds.config_path).is_absolute() is False
+
+
+# ---- build_snapshot (Task 6) ----
+
+from configguard.fleet import build_snapshot
+
+
+CLEAN_CONFIG = """
+hostname Branch-Router-01
+!
+aaa new-model
+username netadmin privilege 15 secret 0 ChangeMe123!
+line vty 0 4
+ transport input ssh
+ login local
+!
+logging host 192.0.2.10
+ntp server 10.0.0.1
+end
+"""
+
+DIRTY_CONFIG = """
+snmp-server community public RO
+ip http server
+end
+"""
+
+BROKEN_CONFIG = "interface bogus {{{\n"
+
+
+def test_build_snapshot_with_3_devices(tmp_path):
+    (tmp_path / "core1.conf").write_text(CLEAN_CONFIG)
+    (tmp_path / "edge2.conf").write_text(DIRTY_CONFIG)
+    (tmp_path / "core2.conf").write_text(CLEAN_CONFIG)
+    snap = build_snapshot(
+        config_dir=tmp_path,
+        rules_dir=Path("configguard/rules"),
+        configguard_version="0.5.0",
+    )
+    assert snap.snapshot_version == 1
+    assert len(snap.devices) == 3
+    names = {d.device_name for d in snap.devices}
+    assert names == {"core1", "core2", "edge2"}
+    # Summary
+    assert snap.summary.device_count == 3
+    assert snap.summary.compliant == 2
+    assert snap.summary.non_compliant == 1
+    assert snap.summary.errored == 0
+
+
+def test_build_snapshot_continues_on_parse_error(tmp_path):
+    """One device has an unreadable config — orchestrator must still
+    report the rest. The spec sketched BROKEN_CONFIG as a parse error,
+    but the parser is tolerant; the only reliable ERROR trigger for a
+    regular file is an OSError on read_bytes (e.g., chmod 000).
+    Skip on root where permission denial is bypassed.
+    """
+    import os
+    if os.geteuid() == 0:
+        pytest.skip("chmod-based permission denial has no effect when running as root")
+    (tmp_path / "good.conf").write_text(CLEAN_CONFIG)
+    bad = tmp_path / "bad.conf"
+    bad.write_text("hostname badrouter\nend\n")
+    os.chmod(bad, 0o000)
+    try:
+        snap = build_snapshot(
+            config_dir=tmp_path,
+            rules_dir=Path("configguard/rules"),
+            configguard_version="0.5.0",
+        )
+    finally:
+        os.chmod(bad, 0o644)  # ensure tmp_path cleanup can read it
+    assert len(snap.devices) == 2
+    statuses = {d.device_name: d.status for d in snap.devices}
+    assert statuses["good"] == "COMPLIANT"
+    assert statuses["bad"] == "ERROR"
+    assert snap.summary.errored == 1
+
+
+def test_build_snapshot_generator_metadata_is_populated(tmp_path):
+    (tmp_path / "x.conf").write_text(CLEAN_CONFIG)
+    snap = build_snapshot(
+        config_dir=tmp_path,
+        rules_dir=Path("configguard/rules"),
+        configguard_version="0.5.0",
+    )
+    assert snap.generator["configguard_version"] == "0.5.0"
+    assert "python_version" in snap.generator
+
+
+def test_build_snapshot_devices_are_sorted(tmp_path):
+    # Files added out of order
+    (tmp_path / "z.conf").write_text(CLEAN_CONFIG)
+    (tmp_path / "a.conf").write_text(CLEAN_CONFIG)
+    (tmp_path / "m.conf").write_text(CLEAN_CONFIG)
+    snap = build_snapshot(
+        config_dir=tmp_path,
+        rules_dir=Path("configguard/rules"),
+        configguard_version="0.5.0",
+    )
+    names = [d.device_name for d in snap.devices]
+    assert names == ["a", "m", "z"]
+
+
+def test_build_snapshot_round_trips_through_json(tmp_path):
+    (tmp_path / "x.conf").write_text(DIRTY_CONFIG)
+    snap = build_snapshot(
+        config_dir=tmp_path,
+        rules_dir=Path("configguard/rules"),
+        configguard_version="0.5.0",
+    )
+    data = snap.to_dict()
+    json_str = json.dumps(data)
+    restored = type(snap).from_dict(json.loads(json_str))
+    assert restored.snapshot_version == 1
+    assert len(restored.devices) == 1
+    assert restored.devices[0].status == "NON-COMPLIANT"
 
