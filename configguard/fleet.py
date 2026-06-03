@@ -20,6 +20,7 @@ from configguard.snapshot import (
     make_generator_metadata,
     now_iso_utc,
 )
+from configguard.output.json import generate_json_report
 
 # Default globs matched in addition to user-supplied --include values.
 DEFAULT_INCLUDES = ("*.conf", "*.txt", "*.cfg")
@@ -175,3 +176,60 @@ def build_snapshot(
         summary=summary,
         devices=devices,
     )
+
+
+def write_fleet_outputs(
+    snapshot: Snapshot,
+    output_dir: Path,
+    snapshot_name: str = "fleet",
+) -> tuple[Path, list[Path]]:
+    """Write the Snapshot to disk and per-device JSON reports.
+
+    Returns (snapshot_path, [per_device_paths]).
+
+    Output structure:
+      <output_dir>/<snapshot_name>.snapshot.json
+      <output_dir>/devices/<device_name>.report.json
+
+    The `devices/` dir is always created (even for empty fleets) so the
+    schema is stable. Per-device reports reuse the v0.1 contract unchanged.
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    devices_dir = output_dir / "devices"
+    devices_dir.mkdir(parents=True, exist_ok=True)
+
+    # Snapshot
+    snap_path = output_dir / f"{snapshot_name}.snapshot.json"
+    snapshot.write_json(snap_path)
+
+    # Per-device reports
+    per_device_paths = []
+    for ds in snapshot.devices:
+        # For per-device risk_result we need a synthetic RiskEngineResult.
+        # Simplest: pass a stub with the level we already computed.
+        from configguard.risk.model import RiskScore, RiskEngineResult, RiskLevel
+        risk_score = RiskScore(
+            score=0,  # we don't have the numeric score; per-device JSON has level
+            level=RiskLevel(ds.level),
+            finding_count=len(ds.findings),
+            severity_breakdown=ds.severity_breakdown,
+            category_breakdown={},
+            context_coverage=0,
+        )
+        risk_result = RiskEngineResult(
+            risk_score=risk_score,
+            findings=ds.findings,
+            evaluation_metadata={},
+        )
+        report_str = generate_json_report(
+            findings=ds.findings,
+            config_name=ds.device_name,
+            rules_version="0.1.0",  # per-device contract; v0.5 doesn't change it
+            risk_result=risk_result,
+        )
+        report_path = devices_dir / f"{ds.device_name}.report.json"
+        report_path.write_text(report_str)
+        per_device_paths.append(report_path)
+
+    return snap_path, per_device_paths

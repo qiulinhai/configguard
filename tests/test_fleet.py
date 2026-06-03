@@ -5,7 +5,12 @@ from pathlib import Path
 import pytest
 from configguard.fleet import discover_configs
 from configguard.services.audit_service import AuditResult
-from configguard.snapshot import Snapshot
+from configguard.snapshot import (
+    FleetSummary,
+    Snapshot,
+    make_generator_metadata,
+    now_iso_utc,
+)
 
 
 def _make_audit_result(tmp_path, content, error=None):
@@ -177,7 +182,7 @@ def test_device_snapshot_config_path_is_relative_to_config_dir(tmp_path):
 
 # ---- build_snapshot (Task 6) ----
 
-from configguard.fleet import build_snapshot
+from configguard.fleet import build_snapshot, write_fleet_outputs
 
 
 CLEAN_CONFIG = """
@@ -287,4 +292,72 @@ def test_build_snapshot_round_trips_through_json(tmp_path):
     assert restored.snapshot_version == 1
     assert len(restored.devices) == 1
     assert restored.devices[0].status == "NON-COMPLIANT"
+
+
+# ---- write_fleet_outputs (Task 7) ----
+
+
+def test_write_fleet_outputs_creates_snapshot_and_per_device_reports(tmp_path):
+    cfg_dir = tmp_path / "configs"
+    cfg_dir.mkdir()
+    (cfg_dir / "core1.conf").write_text(CLEAN_CONFIG)
+    (cfg_dir / "edge2.conf").write_text(DIRTY_CONFIG)
+    out_dir = tmp_path / "out"
+
+    snap = build_snapshot(
+        config_dir=cfg_dir,
+        rules_dir=Path("configguard/rules"),
+        configguard_version="0.5.0",
+    )
+    write_fleet_outputs(snap, output_dir=out_dir, snapshot_name="fleet")
+
+    # Snapshot file
+    snap_path = out_dir / "fleet.snapshot.json"
+    assert snap_path.is_file()
+    data = json.loads(snap_path.read_text())
+    assert data["snapshot_version"] == 1
+
+    # Per-device reports
+    devices_dir = out_dir / "devices"
+    assert devices_dir.is_dir()
+    assert (devices_dir / "core1.report.json").is_file()
+    assert (devices_dir / "edge2.report.json").is_file()
+
+    # Per-device report shape
+    report = json.loads((devices_dir / "edge2.report.json").read_text())
+    assert "summary" in report
+    assert "findings" in report
+    assert "compliance" in report  # v0.1 contract: compliance block
+    assert report["compliance"]["status"] == "NON-COMPLIANT"
+
+
+def test_write_fleet_outputs_creates_devices_dir_even_for_empty_fleet(tmp_path):
+    # Defensive: if Snapshot has 0 devices, devices/ dir is still created
+    snap = Snapshot(
+        snapshot_version=1,
+        generator=make_generator_metadata(),
+        generated_at=now_iso_utc(),
+        source={"config_dir": str(tmp_path), "rules_dir": "x"},
+        summary=FleetSummary.from_devices([]),
+        devices=[],
+    )
+    out_dir = tmp_path / "out"
+    write_fleet_outputs(snap, output_dir=out_dir, snapshot_name="fleet")
+    assert (out_dir / "devices").is_dir()
+
+
+def test_write_fleet_outputs_with_custom_snapshot_name(tmp_path):
+    cfg_dir = tmp_path / "configs"
+    cfg_dir.mkdir()
+    (cfg_dir / "x.conf").write_text(CLEAN_CONFIG)
+    out_dir = tmp_path / "out"
+
+    snap = build_snapshot(
+        config_dir=cfg_dir,
+        rules_dir=Path("configguard/rules"),
+        configguard_version="0.5.0",
+    )
+    write_fleet_outputs(snap, output_dir=out_dir, snapshot_name="20260602_prod")
+    assert (out_dir / "20260602_prod.snapshot.json").is_file()
+    assert (out_dir / "devices" / "x.report.json").is_file()
 
