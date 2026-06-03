@@ -18,6 +18,7 @@ This guide assumes you have a Cisco IOS configuration file you want to audit. No
 8. [Output formats in detail](#8-output-formats-in-detail)
 9. [Common workflows](#9-common-workflows)
 10. [CI integration recipes](#10-ci-integration-recipes)
+15. [Fleet audits](#15-fleet-audits)
 11. [Custom rule packs](#11-custom-rule-packs)
 12. [Troubleshooting](#12-troubleshooting)
 13. [FAQ](#13-faq)
@@ -965,6 +966,158 @@ In GitHub Actions, branch-conditional thresholds:
     fi
     configguard audit router.conf --fail-on $threshold
 ```
+
+---
+
+## 15. Fleet audits
+
+For network-wide audits, point `configguard fleet audit` at a directory of config files.
+
+### 15.1 When to use fleet mode
+
+Use fleet mode when:
+
+- You have a directory of saved configs (one per device) — typical backup workflow.
+- You want a fleet-level compliance status, not just per-device pass/fail.
+- You're auditing many devices in a single CI run.
+
+Use single-file `audit` when:
+
+- You're iterating on a single config.
+- You want the per-finding evidence + remediation per device.
+- You're wiring ConfigGuard into a device-pull pipeline that already handles the multi-device aspect.
+
+### 15.2 The command
+
+```bash
+configguard fleet audit <config-dir> [OPTIONS]
+```
+
+Common options:
+
+| Flag | Default | Purpose |
+|---|---|---|
+| `--output-dir PATH` | `./output` | Where to write the snapshot + per-device reports |
+| `--snapshot-name NAME` | `fleet` | Snapshot file basename (e.g. `20260602_prod`) |
+| `--fail-on {none,low,medium,high}` | `none` | Exit non-zero if any FAIL finding (across the whole fleet) meets the threshold |
+| `--include GLOB` | `*.conf *.txt *.cfg` | Glob for config files (repeatable) |
+| `--quiet` | off | Suppress per-device progress on stdout (for CI logs) |
+
+### 15.3 What gets written
+
+```
+<output-dir>/
+├── fleet.snapshot.json              # the canonical artifact
+└── devices/
+    ├── core1.report.json            # per-device (same shape as `audit` JSON)
+    ├── core2.report.json
+    ├── edge1.report.json
+    ├── edge2.report.json
+    └── fw1.report.json
+```
+
+The **snapshot** is self-contained. It includes every per-device finding, every config hash, the fleet summary, and generator metadata. You can `scp` it to another host and Phase 2's `configguard fleet diff` will read it without any companion files.
+
+The per-device reports are run-time caches for human drilldown. Same shape as the single-file `audit` JSON output, including the `compliance` block.
+
+### 15.4 Snapshot v1 schema
+
+```json
+{
+  "snapshot_version": 1,
+  "generator": {
+    "configguard_version": "0.5.0",
+    "python_version": "3.12.4"
+  },
+  "generated_at": "2026-06-02T14:30:22Z",
+  "source": {
+    "config_dir": "./configs",
+    "rules_dir": "./configguard/rules"
+  },
+  "summary": {
+    "device_count": 5,
+    "compliant": 3,
+    "non_compliant": 2,
+    "errored": 0,
+    "findings_total": 8,
+    "findings_failed": 4,
+    "findings_passed": 4,
+    "high_risk_device_count": 2
+  },
+  "devices": [
+    {
+      "device_name": "edge2",
+      "config_path": "configs/edge2.conf",
+      "config_hash": "7d865e959b2466918c9863afca942d0fb89d2c9f9b0a1e2c5d3b8e4a7f1c0d2e",
+      "status": "NON-COMPLIANT",
+      "level": "CRITICAL",
+      "severity_breakdown": { "HIGH": 2, "MEDIUM": 1, "LOW": 0 },
+      "findings": [ /* same shape as the per-device report */ ],
+      "error": null
+    }
+  ]
+}
+```
+
+Key fields:
+
+- **`device_name`** is the **identity** of a device (match key for cross-snapshot diff). `config_path` is **metadata** — it tells you where the file was found, not which device it is.
+- **`config_hash`** is the SHA-256 of the config bytes, lowercase hexadecimal. Phase 2's `fleet diff` will use this to skip identical configs.
+- **`status`** is three-valued: `COMPLIANT` (no FAIL), `NON-COMPLIANT` (≥1 FAIL), `ERROR` (audit couldn't run). ERROR is intentionally not folded into NON-COMPLIANT — the difference matters in fleet summaries.
+- **`level`** is the categorical risk conclusion (`LOW` / `MEDIUM` / `HIGH` / `CRITICAL`). The numeric score is **not** in the snapshot; see the next section.
+- **`summary`** is a derived view of `devices`. If you ever suspect drift, regenerate it with `FleetSummary.from_devices(snapshot.devices)`.
+
+### 15.5 Why no numeric score in the snapshot?
+
+The Snapshot is a long-term contract; the RiskEngine scoring algorithm is implementation detail. The categorical level is what drives user action ("this device is HIGH → investigate") and is more robust to threshold-table tweaks. Numeric scores can change semantically without any schema change, which would feel like incompatibility to downstream consumers.
+
+The per-device `report.json` files continue to include the numeric score (it's the v0.1 contract for run-time output).
+
+### 15.6 Versioning
+
+`snapshot_version: 1` is the contract. The rules:
+
+- **Additive changes** (new field, new enum value to an existing enum) do **not** bump the version. Consumers ignore unknown fields.
+- **Breaking changes** (rename, remove, type change) bump the version. A future `configguard fleet migrate-snapshot` will convert old versions to new.
+
+For now, if a snapshot has a different `snapshot_version`, ConfigGuard refuses to load it.
+
+### 15.7 Common workflows
+
+**Track compliance over time:**
+
+```bash
+# Snapshot once a week
+configguard fleet audit configs/ --snapshot-name "week_$(date +%Y%m%d)" --output-dir snapshots/
+# Snapshots accumulate in snapshots/20260602_prod.snapshot.json, snapshots/20260609_prod.snapshot.json, ...
+# Phase 2: `configguard fleet diff snapshots/20260602_prod.snapshot.json snapshots/20260609_prod.snapshot.json`
+```
+
+**Block a deployment if fleet is non-compliant:**
+
+```bash
+configguard fleet audit configs/ --fail-on high || {
+  echo "Fleet has HIGH-severity findings. Blocking deploy."
+  exit 1
+}
+```
+
+**CI integration (GitHub Actions):**
+
+```yaml
+- run: configguard fleet audit configs/ --fail-on high
+- uses: actions/upload-artifact@v4
+  with:
+    name: fleet-snapshot
+    path: output/fleet.snapshot.json
+```
+
+### 15.8 Limitations
+
+- **One-level directory scan.** Subdirectories are silently ignored. If you need a tree, run a separate fleet audit per top-level subdir.
+- **Cisco IOS only.** Multi-vendor (Linux, Junos) is on the roadmap (v0.5.x or later).
+- **No built-in retention.** Snapshots accumulate under your output directory. Use OS-level rotation or name them with timestamps yourself.
+- **No fleet-level score.** Status and counts only. The score comes when the algorithm is validated against real fleets.
 
 ---
 
