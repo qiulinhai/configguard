@@ -45,7 +45,7 @@ def discover_configs(
     if not matched:
         joined = ",".join(includes)
         raise FileNotFoundError(
-            f"Error: no config files found in {config_dir} (matched: {joined}). Exiting."
+            f"No config files found in {config_dir} (patterns: {joined})"
         )
 
     return sorted(matched)

@@ -36,13 +36,13 @@ def test_discover_skips_dotfiles_and_symlinks(tmp_path):
     (tmp_path / "a.conf").write_text("x")
     (tmp_path / ".hidden.conf").write_text("x")
     (tmp_path / "regular.txt").write_text("x")
-    # Symlink (if filesystem supports it)
+    # Symlink (skip the test if filesystem doesn't support symlinks)
     target = tmp_path / "a.conf"
     link = tmp_path / "link.conf"
     try:
         link.symlink_to(target)
     except (OSError, NotImplementedError):
-        pass  # skip on filesystems that don't support symlinks
+        pytest.skip("symlinks unsupported on this filesystem")
 
     found = discover_configs(tmp_path, includes=["*.conf", "*.txt"])
     names = [p.name for p in found]
