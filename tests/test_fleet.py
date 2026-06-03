@@ -1,9 +1,11 @@
 """Unit tests for the fleet module."""
 import json
+import os
 from pathlib import Path
 import pytest
 from configguard.fleet import discover_configs
 from configguard.services.audit_service import AuditResult
+from configguard.snapshot import Snapshot
 
 
 def _make_audit_result(tmp_path, content, error=None):
@@ -198,8 +200,6 @@ ip http server
 end
 """
 
-BROKEN_CONFIG = "interface bogus {{{\n"
-
 
 def test_build_snapshot_with_3_devices(tmp_path):
     (tmp_path / "core1.conf").write_text(CLEAN_CONFIG)
@@ -228,7 +228,6 @@ def test_build_snapshot_continues_on_parse_error(tmp_path):
     regular file is an OSError on read_bytes (e.g., chmod 000).
     Skip on root where permission denial is bypassed.
     """
-    import os
     if os.geteuid() == 0:
         pytest.skip("chmod-based permission denial has no effect when running as root")
     (tmp_path / "good.conf").write_text(CLEAN_CONFIG)
@@ -284,7 +283,7 @@ def test_build_snapshot_round_trips_through_json(tmp_path):
     )
     data = snap.to_dict()
     json_str = json.dumps(data)
-    restored = type(snap).from_dict(json.loads(json_str))
+    restored = Snapshot.from_dict(json.loads(json_str))
     assert restored.snapshot_version == 1
     assert len(restored.devices) == 1
     assert restored.devices[0].status == "NON-COMPLIANT"

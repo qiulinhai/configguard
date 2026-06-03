@@ -134,9 +134,13 @@ def build_snapshot(
     Returns a fully-populated Snapshot. The caller is responsible for
     writing it to disk and printing the assessment block.
 
-    Continues on per-device errors (parse failure, read failure, etc.):
-    partial success is preferred over atomic failure — a fleet with one
-    broken config should still report the rest.
+    Continues on per-device errors surfaced via AuditResult.error (parse
+    failure, read failure). Pipeline exceptions (e.g., a bug inside the
+    risk engine) propagate — the contract is "errors caught by the
+    service", not "errors caught by try/except everywhere".
+
+    Executes serially; the spec calls this out as MVP. Concurrency
+    would require per-device isolation of the engine's mutable state.
     """
     config_dir = Path(config_dir)
     config_paths = discover_configs(config_dir)
@@ -154,12 +158,11 @@ def build_snapshot(
 
     summary = FleetSummary.from_devices(devices)
 
-    # Generator metadata: honor the caller's configguard_version when
-    # explicitly provided so the test (and any external caller) sees
-    # the version they asked for rather than the imported __version__.
-    generator = make_generator_metadata()
-    if configguard_version is not None:
-        generator["configguard_version"] = configguard_version
+    # build_snapshot takes an explicit `configguard_version` so the snapshot
+    # records the version we're about to release (which may differ from the
+    # package's current __version__ constant while we work through the
+    # release). The helper falls back to __version__ when not provided.
+    generator = make_generator_metadata(configguard_version=configguard_version)
 
     return Snapshot(
         snapshot_version=1,

@@ -265,10 +265,15 @@ def _finding_status(f) -> str:
     return s.value if hasattr(s, "value") else str(s)
 
 
-def make_generator_metadata() -> dict:
-    """Build the `generator` block for a new Snapshot."""
+def make_generator_metadata(configguard_version: str | None = None) -> dict:
+    """Build the `generator` block for a new Snapshot.
+
+    `configguard_version` defaults to the current package `__version__`. Callers
+    that want to record a different version (e.g., a future v0.5 build while the
+    package is still tagged v0.2.0) can pass it explicitly.
+    """
     return {
-        "configguard_version": __version__,
+        "configguard_version": configguard_version or __version__,
         "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
     }
 
