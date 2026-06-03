@@ -4,6 +4,16 @@ All notable changes to ConfigGuard are documented here. The format is based on [
 
 ## [Unreleased]
 
+### Added
+- **`configguard fleet audit <dir>`** — audit a directory of configs in one invocation
+- **Snapshot v1 contract** — self-contained, version-stamped canonical artifact (`fleet.snapshot.json`); Phase 2's `fleet diff` will read it
+- **Per-device JSON reports** for fleet audits (`devices/<name>.report.json`), same shape as the single-file `audit` JSON
+- **`services/audit_service.py`** — shared "load → parse → evaluate → score → return" pipeline used by both `audit` and `fleet audit`
+- **`--snapshot-name NAME`** flag (default `fleet`) for naming fleet snapshots
+- **`--include GLOB`** flag (repeatable) for filtering config files (defaults: `*.conf`, `*.txt`, `*.cfg`)
+- **`--quiet`** flag to suppress per-device progress on stdout
+- **`configguard.audit_service.run_audit()`** public function for embedding audit in other tools
+
 ## [0.1.0] - 2026-06-02
 
 ### Added
