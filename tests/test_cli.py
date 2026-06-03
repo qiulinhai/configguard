@@ -14,7 +14,7 @@ def test_cli_basic_audit(tmp_path):
     config_file = tmp_path / "config.txt"
     config_file.write_text("line vty 0 4\n transport input telnet ssh\n")
 
-    result = runner.invoke(app, [str(config_file)])
+    result = runner.invoke(app, ["audit", str(config_file)])
     assert result.exit_code == 0
     assert "FAIL" in result.output or "telnet" in result.output.lower()
 
@@ -24,7 +24,7 @@ def test_cli_with_signal_extraction(tmp_path):
     config_file = tmp_path / "config.txt"
     config_file.write_text("line vty 0 4\n transport input telnet ssh\n")
 
-    result = runner.invoke(app, [str(config_file)])
+    result = runner.invoke(app, ["audit", str(config_file)])
     assert result.exit_code == 0
     assert "FAIL" in result.output or "PASS" in result.output
     # Verify signal extraction info not leaked to user (internal)
@@ -49,7 +49,7 @@ def test_cli_dual_path_evaluation(tmp_path):
     end
     """)
 
-    result = runner.invoke(app, [str(config_file)])
+    result = runner.invoke(app, ["audit", str(config_file)])
     assert result.exit_code == 0
     # Should detect telnet and SNMP
     assert "CISCO-MGMT-001" in result.output or "telnet" in result.output
@@ -63,7 +63,7 @@ def test_cli_fail_on_none_default_returns_zero(tmp_path):
     runner = CliRunner()
     cfg = tmp_path / "config.txt"
     cfg.write_text("line vty 0 4\n transport input telnet\n")
-    result = runner.invoke(app, [str(cfg), "--fail-on", "none"])
+    result = runner.invoke(app, ["audit", str(cfg), "--fail-on", "none"])
     assert result.exit_code == 0
 
 
@@ -73,7 +73,7 @@ def test_cli_fail_on_high_exits_one_on_high(tmp_path):
     runner = CliRunner()
     cfg = tmp_path / "config.txt"
     cfg.write_text("line vty 0 4\n transport input telnet\n")
-    result = runner.invoke(app, [str(cfg), "--fail-on", "high"])
+    result = runner.invoke(app, ["audit", str(cfg), "--fail-on", "high"])
     assert result.exit_code == 1
 
 
@@ -83,7 +83,7 @@ def test_cli_fail_on_high_exits_zero_on_clean(tmp_path):
     runner = CliRunner()
     cfg = tmp_path / "config.txt"
     cfg.write_text("hostname R1\n!\naaa new-model\n!\nend\n")
-    result = runner.invoke(app, [str(cfg), "--fail-on", "high"])
+    result = runner.invoke(app, ["audit", str(cfg), "--fail-on", "high"])
     assert result.exit_code == 0
 
 
@@ -93,5 +93,5 @@ def test_cli_fail_on_invalid_value_errors(tmp_path):
     runner = CliRunner()
     cfg = tmp_path / "config.txt"
     cfg.write_text("hostname R1\n")
-    result = runner.invoke(app, [str(cfg), "--fail-on", "bogus"])
+    result = runner.invoke(app, ["audit", str(cfg), "--fail-on", "bogus"])
     assert result.exit_code != 0
