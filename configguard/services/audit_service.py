@@ -78,16 +78,6 @@ def run_audit(
             error=f"Failed to parse {config_path}: {exc}",
         )
 
-    # The parser is tolerant of garbage input. A config that yields no
-    # raw_lines is treated as a parse error (only comments / whitespace).
-    if not ir.raw_lines and not ir.blocks:
-        return AuditResult(
-            config_name=config_name,
-            config_path=str(config_path),
-            config_hash=config_hash,
-            error=f"Failed to parse {config_path}: no parseable content",
-        )
-
     # 3. Evaluate
     engine = RuleEngine(str(rules_dir))
     try:

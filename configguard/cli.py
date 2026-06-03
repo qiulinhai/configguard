@@ -4,12 +4,6 @@ import sys
 import typer
 from pathlib import Path
 from datetime import datetime
-from configguard.parser import CiscoIOSParser
-from configguard.signals import SignalExtractor
-from configguard.context import ContextBuilder
-from configguard.engine import RuleEngine
-from configguard.evidence import EvidenceBuilder
-from configguard.risk import RiskEngine
 from configguard.registry import create_signal_registry_with_defaults
 from configguard.models import Severity
 from configguard.output.json import generate_json_report
@@ -52,58 +46,41 @@ def audit(
         typer.echo(f"Error: File not found: {config_file}", err=True)
         raise typer.Exit(1)
 
-    config_text = config_file.read_text()
-    parser = CiscoIOSParser(config_text)
-    try:
-        ir = parser.parse()
-    except Exception as exc:
-        typer.echo(
-            f"Error: Failed to parse {config_file}: {exc}",
-            err=True,
-        )
+    from configguard.services.audit_service import run_audit
+
+    result = run_audit(
+        config_path=config_file,
+        config_name=config_file.name,
+        rules_dir=rules_dir,
+        use_context=use_context,
+    )
+
+    if result.is_error:
+        typer.echo(f"Error: {result.error}", err=True)
         raise typer.Exit(1)
 
-    engine = RuleEngine(str(rules_dir))
+    findings = result.findings
+    risk_result = result.risk_result
 
-    # Context-based evaluation: signals -> contexts -> per-context evaluation
-    if use_context:
+    # --debug-contexts: re-extract contexts just for printing (the service
+    # doesn't expose them; for v0.5 this debug flag only works in `audit`,
+    # not in `fleet audit`. That's acceptable; documented in v0.5 docs.)
+    if use_context and debug_contexts:
+        from configguard.parser import CiscoIOSParser
+        from configguard.signals import SignalExtractor
+        from configguard.context import ContextBuilder
+        ir = CiscoIOSParser(config_file.read_text()).parse()
         extractor = SignalExtractor()
         signals = extractor.extract(ir)
-
         builder = ContextBuilder()
         contexts = builder.build_contexts(signals)
-
-        if debug_contexts:
-            contexts_json = {
-                "contexts": [ctx.to_dict() for ctx in contexts],
-                "count": len(contexts),
-            }
-            typer.echo("\n--- DEBUG: SignalContexts ---")
-            typer.echo(json.dumps(contexts_json, indent=2, default=str))
-            typer.echo("--- END DEBUG ---\n")
-
-        # Fall back to legacy evaluation if rules don't have applies_to declarations
-        if not engine._category_index:
-            # No context-based rules loaded, use legacy evaluation
-            findings = engine.evaluate(ir)
-        else:
-            findings = engine.evaluate_with_contexts(contexts, engine.rules)
-
-        # Build context-to-finding mapping and attach evidence summaries
-        evidence_builder = EvidenceBuilder()
-        context_by_key = {ctx.context_key: ctx for ctx in contexts}
-        for f in findings:
-            if f.block_name and f.block_name in context_by_key:
-                context = context_by_key[f.block_name]
-                evidence_builder.attach_evidence_summary(f, context)
-    else:
-        # Legacy per-signal evaluation
-        findings = engine.evaluate(ir)
-
-    # Risk scoring (v0.3) - now always-on (was opt-in via --risk-score, promoted to
-    # default in v0.2 to align CLI output with the 'compliance platform' framing).
-    # The --risk-score flag is kept for backward compatibility but is a no-op.
-    risk_result = RiskEngine().evaluate(findings)
+        contexts_json = {
+            "contexts": [ctx.to_dict() for ctx in contexts],
+            "count": len(contexts),
+        }
+        typer.echo("\n--- DEBUG: SignalContexts ---")
+        typer.echo(json.dumps(contexts_json, indent=2, default=str))
+        typer.echo("--- END DEBUG ---\n")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     config_name = config_file.stem  # filename without extension

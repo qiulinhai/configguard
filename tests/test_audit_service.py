@@ -27,10 +27,10 @@ ip http server
 end
 """
 
-# Config that produces no parseable content (only comments).
-# The parser is tolerant of garbage input, so this is the closest we can
-# get to a "parse error" without modifying the parser itself.
-UNPARSEABLE_CONFIG = "!\n!\n!\n"
+# Config that contains no blocks (only comments). The parser is tolerant,
+# so this parses to an empty IR. The service should still evaluate it
+# and produce findings (e.g., CISCO-AUTH-001 fails because no AAA config).
+EMPTY_CONFIG = "!\n!\n!\n"
 
 
 def _write(tmp_path: Path, name: str, content: str) -> Path:
@@ -67,18 +67,24 @@ def test_run_audit_computes_correct_sha256_hash(tmp_path):
     assert result.config_hash == expected_hash
 
 
-def test_run_audit_handles_parse_error(tmp_path):
-    cfg = _write(tmp_path, "bad.conf", UNPARSEABLE_CONFIG)
+def test_run_audit_handles_empty_config(tmp_path):
+    """Empty/comment-only configs are still evaluated and produce findings.
+
+    The parser is tolerant: it returns an empty IR rather than raising.
+    The service should still run the engine on the empty IR so the caller
+    gets findings (e.g., CISCO-AUTH-001 fails because no AAA is configured).
+    This preserves the pre-refactor CLI behavior.
+    """
+    cfg = _write(tmp_path, "empty.conf", EMPTY_CONFIG)
     result = run_audit(
         config_path=cfg,
         config_name=cfg.name,
         rules_dir=Path("configguard/rules"),
         use_context=True,
     )
-    # Parse errors become ERROR status, not exceptions
-    assert result.error is not None
-    assert result.findings == []
-    assert result.risk_result is None
+    assert result.error is None
+    assert len(result.findings) > 0
+    assert result.risk_result is not None
 
 
 def test_run_audit_handles_missing_file(tmp_path):
